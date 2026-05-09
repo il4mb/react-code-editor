@@ -1,0 +1,7 @@
+{
+    "name": "test",
+    "private": true,
+    "dependencies": {
+        "@il4mb/rcd": "workspace:*"
+    }
+}
