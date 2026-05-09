@@ -1,7 +1,23 @@
 {
     "name": "test",
     "private": true,
+    "scripts": {
+        "dev": "vite"
+    },
     "dependencies": {
-        "@il4mb/rcd": "workspace:*"
+        "@il4mb/rce": "workspace:*",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6"
+    },
+    "devDependencies": {
+        "@emotion/styled": "^11.14.1",
+        "@mui/system": "^9.0.1",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "vite": "^8.0.11"
+    },
+    "peerDependencies": {
+        "@emotion/styled": "^11.14.1",
+        "@mui/system": "^9.0.1"
     }
 }

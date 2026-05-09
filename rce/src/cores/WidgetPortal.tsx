@@ -1,9 +1,9 @@
 import { createPortal } from "react-dom"
-import { useOverlayElement } from "./Shell"
 import { useEditableElement } from "./Canvas"
 import { useEffect, useState } from "react"
 import { getCaretCoordinates } from "../utils/caret"
-import { useCodeState } from "../EditorProvider"
+import { useEditor } from "../Editor"
+import { useOverlayElement } from "../Shell"
 
 interface WidgetPortalProps {
     children?: React.ReactNode
@@ -11,7 +11,7 @@ interface WidgetPortalProps {
 
 export default function WidgetPortal({ children }: WidgetPortalProps) {
 
-    const { position } = useCodeState()
+    const { state: { position } } = useEditor()
     const overlay = useOverlayElement()
     const editor = useEditableElement()
     const [coordinates, setCoordinates] = useState<{ x: number; y: number } | null>(

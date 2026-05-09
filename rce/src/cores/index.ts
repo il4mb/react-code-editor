@@ -1,2 +1,2 @@
-export { default as Editor } from "@/cores/Editor"
-export { useEditor } from "@/cores/Editor"
+export { default as WidgetPortal } from "./WidgetPortal";
+export { default as WidgetsProvider } from "./WidgetsProvider";

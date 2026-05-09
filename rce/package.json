@@ -1,40 +1,48 @@
 {
-    "name": "@il4mb/rce",
-    "version": "1.0.0",
-    "description": "React code editor (RCE) is a code editor for react",
-    "types": "./dist/index.d.ts",
-    "keywords": [
-        "code",
-        "editor",
-        "react",
-        "editor",
-        "ritch",
-        "text",
-        "editor"
-    ],
-    "license": "ISC",
-    "author": "il4mb",
-    "type": "module",
-    "exports": {
-        ".": "./dist/index.js",
-        "./cores": {
-            "import": "./dist/cores/index.js",
-            "types": "./dist/cores/index.d.ts"
-        },
-        "./styles.css": "./dist/styles.css"
+  "name": "@il4mb/rce",
+  "version": "1.0.0",
+  "description": "React code editor (RCE) is a code editor for react",
+  "types": "./dist/index.ts",
+  "keywords": [
+    "code",
+    "editor",
+    "react",
+    "editor",
+    "ritch",
+    "text",
+    "editor"
+  ],
+  "license": "ISC",
+  "author": "il4mb",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
     },
-    "scripts": {},
-    "peerDependencies": {
-        "react": "^19.2.6",
-        "react-dom": "^19.2.6"
+    "./cores": {
+      "import": "./src/cores/index.ts",
+      "types": "./src/cores/index.ts"
     },
-    "devDependencies": {
-        "@types/react": "^19.2.14",
-        "@types/react-dom": "^19.2.3",
-        "react": "^19.2.6",
-        "react-dom": "^19.2.6"
-    },
-    "dependencies": {
-        "@mui/system": "^9.0.1"
-    }
+    "./styles.css": "./src/styles.css"
+  },
+  "scripts": {
+    "dev": "concurrently \"tsc -w\" \"tsc-alias -w\"",
+    "build": "tsc && tsc-alias"
+  },
+  "peerDependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "tsc-alias": "^1.8.17"
+  },
+  "dependencies": {
+    "@mui/system": "^9.0.1"
+  }
 }

@@ -1,6 +1,6 @@
 import { createContext, JSX, ReactNode, useContext, useReducer } from "react"
-import { editorReducer } from "@/cores/reducer"
-import { EditorAction, EditorState } from "@/type"
+import { editorReducer } from "./cores/reducer"
+import { EditorAction, EditorState } from "./type"
 
 interface EditorProps {
     children?: ReactNode

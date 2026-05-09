@@ -32,7 +32,7 @@ function isMacPlatform() {
     )
 }
 
-export function useEditor(state: EditorState, dispatch: React.Dispatch<EditorAction>) {
+export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<EditorAction>) {
     const editorRef = useRef<HTMLElement>(null)
     const isComposing = useRef(false)
     const suppressSelectionSync = useRef(false)

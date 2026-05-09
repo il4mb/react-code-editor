@@ -1,6 +1,6 @@
 import { createContext, createRef, RefObject, useContext, useRef } from "react"
-import Canvas from "./Canvas"
-
+import Canvas from "./cores/Canvas"
+    
 export default function Shell() {
     const overlayRef = useRef<HTMLDivElement>(null)
     return (

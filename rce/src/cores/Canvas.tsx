@@ -8,11 +8,11 @@ import {
     useLayoutEffect,
     useMemo
 } from "react"
-import { useEditorContext } from "../EditorProvider"
-import { useEditor } from "../hooks/useEditor"
 import { buildRenderSegments } from "../utils/rendering"
 import { getCaretCoordinates } from "../utils/caret"
 import { styled } from "@mui/system"
+import { useEditor } from "../Editor"
+import { useEditorHandler } from "../hooks/useEditorHandler"
 
 const CanvasElement = styled("code")({
     position: "relative",
@@ -26,14 +26,13 @@ const CanvasElement = styled("code")({
     letterSpacing: "0.01em",
     fontFamily: '"SFMono-Regular", "JetBrains Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace',
     fontSize: "12px",
-    caretColor: "var(--editor-accent)",
     '&:focus': {
         outline: 'none',
     }
 })
 
 export default function Canvas() {
-    const { state, dispatch } = useEditorContext()
+    const { state, dispatch } = useEditor()
     const { code, tokens, selection } = state
     const {
         editorRef,
@@ -47,7 +46,7 @@ export default function Canvas() {
         handleMouseUp,
         restoreSelection,
         syncSelection
-    } = useEditor(state, dispatch)
+    } = useEditorHandler(state, dispatch)
 
     const segments = useMemo(() => buildRenderSegments(code, tokens), [code, tokens])
     const content = useMemo(() => {
