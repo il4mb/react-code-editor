@@ -1,4 +1,4 @@
-import { Token, WidgetComponent } from "../type"
+import { Diagnostic, Token, WidgetComponent } from "../type"
 import { getTokenId } from "./tokenizer"
 import { containsRange, rangeLength } from "./range"
 
@@ -8,6 +8,7 @@ export type RenderSegment = {
     end: number
     text: string
     tokens: Token[]
+    diagnostics: Diagnostic[]
 }
 
 const componentIds = new WeakMap<WidgetComponent, string>()
@@ -35,15 +36,19 @@ function sortActiveTokens(tokens: Token[]) {
     })
 }
 
-export function buildRenderSegments(code: string, tokens: Token[]): RenderSegment[] {
+export function buildRenderSegments(code: string, tokens: Token[], diagnostics: Diagnostic[] = []): RenderSegment[] {
     if (!code.length) {
-        return [{ key: "empty", start: 0, end: 0, text: "", tokens: [] }]
+        return [{ key: "empty", start: 0, end: 0, text: "", tokens: [], diagnostics: [] }]
     }
 
     const boundaries = new Set<number>([0, code.length])
     for (const token of tokens) {
         boundaries.add(token.range[0])
         boundaries.add(token.range[1])
+    }
+    for (const diagnostic of diagnostics) {
+        boundaries.add(diagnostic.range[0])
+        boundaries.add(diagnostic.range[1])
     }
 
     const orderedBoundaries = Array.from(boundaries)
@@ -59,18 +64,20 @@ export function buildRenderSegments(code: string, tokens: Token[]): RenderSegmen
 
         const activeTokens = tokens.filter(token => containsRange(token.range, [start, end]))
         const sortedActiveTokens = sortActiveTokens(activeTokens)
-        const key = sortedActiveTokens.length
-            ? `${start}:${end}:${sortedActiveTokens.map(getTokenId).join("|")}`
-            : `${start}:${end}:plain`
+        
+        const activeDiagnostics = diagnostics.filter(diagnostic => containsRange(diagnostic.range, [start, end]))
+        
+        const key = `${start}:${end}:${sortedActiveTokens.length ? sortedActiveTokens.map(getTokenId).join("|") : "plain"}:${activeDiagnostics.length ? activeDiagnostics.map(d => `${d.severity}-${d.message}`).join("|") : "clean"}`
 
         segments.push({
             key,
             start,
             end,
             text: code.slice(start, end),
-            tokens: sortedActiveTokens
+            tokens: sortedActiveTokens,
+            diagnostics: activeDiagnostics
         })
     }
 
-    return segments.length ? segments : [{ key: "plain", start: 0, end: code.length, text: code, tokens: [] }]
+    return segments.length ? segments : [{ key: "plain", start: 0, end: code.length, text: code, tokens: [], diagnostics: [] }]
 }

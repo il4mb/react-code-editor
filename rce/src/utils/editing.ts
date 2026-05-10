@@ -44,6 +44,20 @@ function nextBoundary(code: string, offset: number) {
     return code.length
 }
 
+function previousWordBoundary(code: string, offset: number) {
+    const textBefore = code.slice(0, offset);
+    const match = textBefore.match(/(\w+|\W+)\s*$/);
+    if (!match) return 0;
+    return offset - match[0].length;
+}
+
+function nextWordBoundary(code: string, offset: number) {
+    const textAfter = code.slice(offset);
+    const match = textAfter.match(/^\s*(\w+|\W+)/);
+    if (!match) return code.length;
+    return offset + match[0].length;
+}
+
 function replaceRange(code: string, start: number, end: number, insertion: string): EditResult {
     const normalizedStart = clampOffset(Math.min(start, end), code.length)
     const normalizedEnd = clampOffset(Math.max(start, end), code.length)
@@ -97,7 +111,7 @@ export function replaceSelection(state: { code: string; selection: Range | null;
     return insertText(state, text)
 }
 
-export function deleteBackward(state: { code: string; selection: Range | null; position: number | null }): EditResult {
+export function deleteBackward(state: { code: string; selection: Range | null; position: number | null }, mode: 'char' | 'word' = 'char'): EditResult {
     const selection = getSelection(state.selection, state.position, state.code.length)
     if (!isRangeCollapsed(selection)) {
         return replaceRange(state.code, selection[0], selection[1], "")
@@ -112,10 +126,11 @@ export function deleteBackward(state: { code: string; selection: Range | null; p
         }
     }
 
-    return replaceRange(state.code, previousBoundary(state.code, caret), caret, "")
+    const start = mode === 'word' ? previousWordBoundary(state.code, caret) : previousBoundary(state.code, caret);
+    return replaceRange(state.code, start, caret, "")
 }
 
-export function deleteForward(state: { code: string; selection: Range | null; position: number | null }): EditResult {
+export function deleteForward(state: { code: string; selection: Range | null; position: number | null }, mode: 'char' | 'word' = 'char'): EditResult {
     const selection = getSelection(state.selection, state.position, state.code.length)
     if (!isRangeCollapsed(selection)) {
         return replaceRange(state.code, selection[0], selection[1], "")
@@ -130,7 +145,8 @@ export function deleteForward(state: { code: string; selection: Range | null; po
         }
     }
 
-    return replaceRange(state.code, caret, nextBoundary(state.code, caret), "")
+    const end = mode === 'word' ? nextWordBoundary(state.code, caret) : nextBoundary(state.code, caret);
+    return replaceRange(state.code, caret, end, "")
 }
 
 export function insertNewLine(state: { code: string; selection: Range | null; position: number | null }): EditResult {

@@ -1,13 +1,14 @@
-import { createContext, JSX, ReactNode, useContext, useReducer } from "react"
+import { createContext, JSX, ReactNode, useContext, useReducer, useEffect } from "react"
 import { editorReducer } from "./cores/reducer"
 import { EditorAction, EditorState } from "./type"
 
 interface EditorProps {
     children?: ReactNode
     initialValue?: string
+    onChange?: (code: string) => void
 }
 
-export default function Editor({ children, initialValue }: EditorProps): JSX.Element {
+export default function Editor({ children, initialValue, onChange }: EditorProps): JSX.Element {
     const [state, dispatch] = useReducer(editorReducer, {
         code: initialValue ?? "",
         tokens: [],
@@ -19,6 +20,11 @@ export default function Editor({ children, initialValue }: EditorProps): JSX.Ele
         suggestionIndex: 0,
         diagnostics: []
     })
+
+    // Trigger onChange when code updates
+    useEffect(() => {
+        onChange?.(state.code)
+    }, [state.code, onChange])
 
     return (
         <Context.Provider value={{ state, dispatch }}>

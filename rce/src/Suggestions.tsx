@@ -2,6 +2,64 @@ import { useEffect, useState, useRef } from "react"
 import { useEditor } from "./Editor"
 import { getCurrentWord, getSuggestions as getDefaultSuggestions } from "./utils/suggestions"
 import { useSuggestionResolver } from "./cores/SuggestionsProvider"
+import { styled } from "@mui/system"
+
+const SuggestionsContainer = styled("div")({
+    position: "absolute",
+    backgroundColor: "rgba(30, 30, 30, 0.95)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    color: "#cccccc",
+    borderRadius: "6px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)",
+    zIndex: 2000,
+    overflowY: "auto",
+    fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
+    userSelect: "none",
+    scrollbarWidth: 'thin',
+    scrollbarColor: '#444 transparent',
+    padding: "4px 0",
+})
+
+const SuggestionList = styled("ul")({
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+})
+
+const SuggestionItem = styled("li", {
+    shouldForwardProp: (prop) => prop !== "active",
+})<{ active?: boolean }>(({ active }) => ({
+    padding: "0 12px",
+    height: "32px",
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: "pointer",
+    fontSize: "13px",
+    backgroundColor: active ? "#094771" : "transparent",
+    color: active ? "#ffffff" : "#cccccc",
+    transition: 'background-color 0.1s ease',
+    '&:hover': {
+        backgroundColor: active ? "#094771" : "rgba(255, 255, 255, 0.05)",
+    }
+}))
+
+const SuggestionIcon = styled("span", {
+    shouldForwardProp: (prop) => prop !== "type",
+})<{ type: 'P' | 'V' }>(({ type }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '16px',
+    height: '16px',
+    borderRadius: '3px',
+    fontSize: '10px',
+    fontWeight: 'bold',
+    backgroundColor: type === 'P' ? 'rgba(0, 122, 204, 0.2)' : 'rgba(184, 115, 51, 0.2)',
+    color: type === 'P' ? '#4fc1ff' : '#d7ba7d',
+    border: `1px solid ${type === 'P' ? 'rgba(79, 193, 255, 0.2)' : 'rgba(215, 186, 125, 0.2)'}`
+}))
 
 export default function Suggestions() {
     const { state, dispatch } = useEditor()
@@ -13,7 +71,6 @@ export default function Suggestions() {
 
     const WIDTH = 280
     const MAX_HEIGHT = 220
-    const ITEM_HEIGHT = 32
 
     useEffect(() => {
         if (caretCoordinates) {
@@ -23,12 +80,10 @@ export default function Suggestions() {
             let x = caretCoordinates.x
             let y = caretCoordinates.y + caretCoordinates.height + 8
 
-            // Horizontal flip
             if (x + WIDTH > viewportWidth - 20) {
                 x = Math.max(20, viewportWidth - WIDTH - 20)
             }
 
-            // Vertical flip if no space below
             const spaceBelow = viewportHeight - y
             if (spaceBelow < MAX_HEIGHT && y > MAX_HEIGHT) {
                 y = caretCoordinates.y - MAX_HEIGHT - 8
@@ -51,13 +106,9 @@ export default function Suggestions() {
             }
 
             const { word } = getCurrentWord(code, position)
-            let matches: string[] = []
-            
-            if (resolver) {
-                matches = resolver(word, { code, position })
-            } else {
-                matches = getDefaultSuggestions(word)
-            }
+            const matches = resolver 
+                ? resolver(word, { code, position }) 
+                : getDefaultSuggestions(word)
             
             dispatch({ type: "SET_SUGGESTIONS", payload: matches })
         } else {
@@ -66,13 +117,10 @@ export default function Suggestions() {
         }
     }, [code, position, dispatch, resolver])
 
-    // Scroll active item into view
     useEffect(() => {
         if (suggestionsRef.current && suggestionIndex >= 0) {
-            const activeItem = suggestionsRef.current.querySelectorAll('li')[suggestionIndex]
-            if (activeItem) {
-                activeItem.scrollIntoView({ block: 'nearest' })
-            }
+            const items = suggestionsRef.current.querySelectorAll('li')
+            items[suggestionIndex]?.scrollIntoView({ block: 'nearest' })
         }
     }, [suggestionIndex])
 
@@ -88,76 +136,38 @@ export default function Suggestions() {
         dispatch({ type: "SET_SUGGESTIONS", payload: [] })
     }
 
-    if (!coordinates || suggestions.length === 0) {
-        return null
-    }
+    if (!coordinates || suggestions.length === 0) return null
 
     return (
-        <div
+        <SuggestionsContainer
             ref={suggestionsRef}
             style={{
-                position: "absolute",
                 left: `${coordinates.x}px`,
                 top: `${coordinates.y}px`,
-                backgroundColor: "rgba(30, 30, 30, 0.95)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#cccccc",
-                borderRadius: "6px",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)",
-                zIndex: 2000,
                 width: `${WIDTH}px`,
                 maxHeight: `${MAX_HEIGHT}px`,
-                overflowY: "auto",
-                fontFamily: '"Inter", "Segoe UI", system-ui, -apple-system, sans-serif',
-                userSelect: "none",
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#444 transparent'
-            }}>
-            <ul style={{ margin: 0, padding: "4px 0", listStyle: "none" }}>
+            }}
+        >
+            <SuggestionList>
                 {suggestions.map((suggestion, i) => {
-                    const isProperty = !suggestion.includes(' ') && !suggestion.includes('#'); // Simple heuristic
+                    const isProperty = !suggestion.includes(' ') && !suggestion.includes('#');
                     return (
-                        <li
+                        <SuggestionItem
                             key={`${suggestion}-${i}`}
+                            active={i === suggestionIndex}
                             onClick={() => handleSelect(suggestion)}
-                            style={{
-                                padding: "0 12px",
-                                height: `${ITEM_HEIGHT}px`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                cursor: "pointer",
-                                fontSize: "13px",
-                                backgroundColor: i === suggestionIndex ? "#094771" : "transparent",
-                                color: i === suggestionIndex ? "#ffffff" : "#cccccc",
-                                transition: 'background-color 0.1s ease'
-                            }}
-                            onMouseEnter={() => {
-                                dispatch({ type: "SET_SUGGESTION_INDEX", payload: i })
-                            }}>
-                            <span style={{ 
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: '16px',
-                                height: '16px',
-                                borderRadius: '3px',
-                                fontSize: '10px',
-                                fontWeight: 'bold',
-                                backgroundColor: isProperty ? 'rgba(0, 122, 204, 0.2)' : 'rgba(184, 115, 51, 0.2)',
-                                color: isProperty ? '#4fc1ff' : '#d7ba7d',
-                                border: `1px solid ${isProperty ? 'rgba(79, 193, 255, 0.2)' : 'rgba(215, 186, 125, 0.2)'}`
-                            }}>
+                            onMouseEnter={() => dispatch({ type: "SET_SUGGESTION_INDEX", payload: i })}
+                        >
+                            <SuggestionIcon type={isProperty ? 'P' : 'V'}>
                                 {isProperty ? 'P' : 'V'}
-                            </span>
+                            </SuggestionIcon>
                             <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                 {suggestion}
                             </span>
-                        </li>
+                        </SuggestionItem>
                     )
                 })}
-            </ul>
-        </div>
+            </SuggestionList>
+        </SuggestionsContainer>
     )
 }

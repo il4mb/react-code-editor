@@ -1,26 +1,10 @@
-import { Editor, Shell, useEditor, WidgetsProvider, SuggestionsProvider } from '@il4mb/rce'
+import { Editor, Shell, useEditor, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider } from '@il4mb/rce'
 import { ColorWidget, CSSName, CSSUnit, NumberWidget } from '@il4mb/rce/widgets'
+import { Diagnostic } from '@il4mb/rce/type';
 import { useEffect, useState } from 'react';
 
 
-const MyParser = ({ children, onChange }: { children: any, onChange: (data: Record<string, string>) => void }) => {
-    const { state } = useEditor();
 
-    useEffect(() => {
-        const rawCode = state.code;
-        const records: [string, string][] = []
-        for (let line of rawCode.split("\n")) {
-            const partOfLine = line.split(":")
-            const key = String(partOfLine[0]).trim()
-            const value = String(partOfLine[1]).trim()
-            if (!key) continue;
-            records.push([key, value])
-        }
-        const object = Object.fromEntries(records);
-        onChange?.(object);
-    }, [state.code, onChange])
-    return children
-}
 
 const CSS_VALUES: Record<string, string[]> = {
     'display': ['block', 'flex', 'grid', 'inline', 'inline-block', 'none'],
@@ -30,8 +14,20 @@ const CSS_VALUES: Record<string, string[]> = {
 }
 
 function App() {
-
     const [style, setStyle] = useState<Record<string, string>>({})
+
+    const handleCodeChange = (code: string) => {
+        const records: [string, string][] = []
+        for (let line of code.split("\n")) {
+            const partOfLine = line.split(":")
+            const key = String(partOfLine[0]).trim()
+            const value = String(partOfLine[1]).trim()
+            if (!key) continue;
+            records.push([key, value])
+        }
+        setStyle(Object.fromEntries(records));
+    }
+
     return (
         <div style={{ padding: '2rem' }}>
             <h1>React Code Editor Test</h1>
@@ -42,13 +38,63 @@ function App() {
             </div>
             <div style={{ border: '1px solid #ccc', borderRadius: '4px', height: '400px', padding: 10 }}>
 
-                <Editor initialValue="color:#f00
+                <Editor 
+                    initialValue="color:#f00
 border:30px
-height:30px">
-                    <MyParser onChange={setStyle}>
+height:30px"
+                    onChange={handleCodeChange}
+                >
+                    <DiagnosticsProvider validator={(code) => {
+                        const diagnostics: Diagnostic[] = [];
+                        const lines = code.split('\n');
+                        let currentPos = 0;
+                        const knownProps = ['color', 'background', 'border', 'display', 'position', 'width', 'height', 'margin', 'padding'];
+
+                        for (const line of lines) {
+                            const trimmedLine = line.trim();
+                            if (trimmedLine) {
+                                if (!line.includes(':')) {
+                                    diagnostics.push({
+                                        range: [currentPos, currentPos + line.length],
+                                        message: "Missing colon in property declaration",
+                                        severity: 'error'
+                                    });
+                                } else {
+                                    const [prop, value] = line.split(':');
+                                    const trimmedProp = prop.trim();
+                                    if (trimmedProp && !knownProps.includes(trimmedProp)) {
+                                        diagnostics.push({
+                                            range: [currentPos + line.indexOf(prop), currentPos + line.indexOf(prop) + prop.length],
+                                            message: `Unknown property: ${trimmedProp}`,
+                                            severity: 'warning'
+                                        });
+                                    }
+                                    if (value) {
+                                        const trimmedValue = value.trim();
+                                        const values = CSS_VALUES[trimmedProp] || [];
+                                        const exactValue = values.find(v => v === trimmedValue.toLowerCase());
+                                        if (!exactValue) {
+                                            diagnostics.push({
+                                                range: [currentPos + line.indexOf(value), currentPos + line.indexOf(value) + value.length],
+                                                message: `Unknown value: ${trimmedValue}`,
+                                                severity: 'warning'
+                                            });
+                                        }
+                                    } else {
+                                        diagnostics.push({
+                                            range: [currentPos + (line.indexOf(':') + 1), currentPos + line.length],
+                                            message: `Missing value`,
+                                            severity: 'warning'
+                                        });
+                                    }
+                                }
+                            }
+                            currentPos += line.length + 1;
+                        }
+                        return diagnostics;
+                    }}>
                         <WidgetsProvider widgets={{ ColorWidget, NumberWidget, CSSUnit, CSSName }}>
                             <SuggestionsProvider resolver={(word, { code, position }) => {
-                                console.log(word, position)
                                 // Logic: If we are after a colon, suggest values for that property
                                 const allBefore = code.slice(0, position);
                                 const lastColon = allBefore.lastIndexOf(':');
@@ -67,15 +113,14 @@ height:30px">
                                     return values.filter(v => v.startsWith(word.toLowerCase()));
                                 }
 
-                                // Otherwise suggest properties (default behavior)
-                                // We can return empty to use default, but here we'll just implement a simple one
+                                // Otherwise suggest properties
                                 const props = ['color', 'background', 'border', 'display', 'position', 'width', 'height', 'margin', 'padding'];
                                 return props.filter(p => p.startsWith(word.toLowerCase()));
                             }}>
                                 <Shell />
                             </SuggestionsProvider>
                         </WidgetsProvider>
-                    </MyParser>
+                    </DiagnosticsProvider>
                 </Editor>
             </div>
         </div>

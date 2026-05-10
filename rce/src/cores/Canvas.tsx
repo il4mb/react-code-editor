@@ -14,32 +14,37 @@ import { styled } from "@mui/system"
 import { useEditor } from "../Editor"
 import { useEditorHandler } from "../hooks/useEditorHandler"
 import Span from "./Span"
+import { DiagnosticDecorator } from "./DiagnosticDecorator"
 
 const CanvasElement = styled("code")({
     position: "relative",
     display: "block",
     minHeight: "280px",
+    padding: "20px",
     outline: "none",
-    overflow: "auto",
+    overflow: "visible",
     whiteSpace: "pre",
     tabSize: 4,
     lineHeight: 1.7,
     letterSpacing: "0.01em",
-    fontFamily: '"SFMono-Regular", "JetBrains Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace',
-    fontSize: "12px",
+    color: "#3a3a3aff",
+    fontFamily: '"JetBrains Mono", "SFMono-Regular", Consolas, monospace',
+    fontSize: "13px",
+    borderRadius: "8px",
+    transition: "box-shadow 0.2s ease",
     '&:focus': {
         outline: 'none',
     }
 })
 
+
+
 export default function Canvas() {
     const { state, dispatch } = useEditor()
-    const { code, tokens, selection } = state
+    const { code, tokens, selection, diagnostics } = state
     const {
         editorRef,
         isComposing,
-        handleInput,
-        handleBeforeInput,
         handleKeyDown,
         handlePaste,
         handleCompositionStart,
@@ -49,20 +54,20 @@ export default function Canvas() {
         syncSelection
     } = useEditorHandler(state, dispatch)
 
-    const segments = useMemo(() => buildRenderSegments(code, tokens), [code, tokens])
+    const segments = useMemo(() => buildRenderSegments(code, tokens, diagnostics), [code, tokens, diagnostics])
     const content = useMemo(() => {
         const nodes: ReactNode[] = []
 
         for (const segment of segments) {
-            const wrapped = segment.tokens.reduceRight<ReactNode>(
+            let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
                     const TokenComponent = token.component
                     return (
                         <Span
                             as={TokenComponent}
                             segments={{
-                                start: segment.tokens[0].range[0],
-                                end: segment.tokens[segment.tokens.length - 1].range[1]
+                                start: segment.start,
+                                end: segment.end
                             }}
                             key={`${segment.key}:${token.range[0]}:${token.range[1]}`}
                             token={token}>
@@ -72,6 +77,22 @@ export default function Canvas() {
                 },
                 segment.text
             )
+
+            if (segment.diagnostics.length > 0) {
+                const highestSeverity = segment.diagnostics.reduce((acc, curr) => {
+                    if (acc === 'error' || curr.severity === 'error') return 'error';
+                    if (acc === 'warning' || curr.severity === 'warning') return 'warning';
+                    return 'info';
+                }, 'info' as 'error' | 'warning' | 'info');
+
+                wrapped = (
+                    <DiagnosticDecorator
+                        severity={highestSeverity}
+                        data-message={segment.diagnostics.map(d => d.message).join("\n")}>
+                        {wrapped}
+                    </DiagnosticDecorator>
+                )
+            }
 
             nodes.push(
                 <Span
@@ -111,9 +132,7 @@ export default function Canvas() {
                 suppressContentEditableWarning
                 role="textbox"
                 aria-multiline="true"
-                onInput={handleInput}
                 onKeyDown={handleKeyDown}
-                onBeforeInput={handleBeforeInput}
                 onPaste={handlePaste}
                 onKeyUp={syncSelection}
                 onClick={syncSelection}

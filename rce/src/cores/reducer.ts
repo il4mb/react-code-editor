@@ -52,6 +52,12 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 suggestionIndex: action.payload
             }
             break
+        case "SET_DIAGNOSTICS":
+            nextState = {
+                ...state,
+                diagnostics: action.payload
+            }
+            break
         default:
             nextState = state
     }
