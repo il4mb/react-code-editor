@@ -78,6 +78,8 @@ export const NumberWidget: WidgetComponent = ({ children, token, renderDecorator
             document.removeEventListener("mouseup", onUp);
             document.body.style.cursor = "";
             
+            dispatch({ type: "SET_ACTIVE_TOKEN", payload: null });
+            
             dispatch({
                 type: "SET_TOKEN_TEXT",
                 payload: { tokenId: tokenRef.current.id, newText: localValueRef.current }
@@ -87,6 +89,7 @@ export const NumberWidget: WidgetComponent = ({ children, token, renderDecorator
         document.addEventListener("mousemove", onMove);
         document.addEventListener("mouseup", onUp);
         document.body.style.cursor = "ew-resize";
+        dispatch({ type: "SET_ACTIVE_TOKEN", payload: tokenRef.current.id });
         e.preventDefault();
     };
 

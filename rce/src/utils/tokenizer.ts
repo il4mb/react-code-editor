@@ -76,7 +76,7 @@ export function buildTokens(code: string, widgets: { [key: string]: WidgetCompon
         
         const existing = prevTokens.find(t => 
             t.component === raw.component && 
-            Math.abs(t.range[0] - raw.range[0]) < 10 // Nearby
+            Math.abs(t.range[0] - raw.range[0]) < 500 // Nearby
         );
 
         if (existing) {

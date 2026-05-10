@@ -115,7 +115,7 @@ export default function Canvas() {
                                 start: segment.start,
                                 end: segment.end
                             }}
-                            key={`${id}-${segment.start}-${segment.end}`}>
+                            key={id}>
                             <MemoizedToken 
                                 TokenComponent={token.component}
                                 token={token}

@@ -96,7 +96,9 @@ export default function Suggestions() {
     }, [caretCoordinates])
 
     useEffect(() => {
-        if (position !== null) {
+        const isInsideToken = state.tokens.some(t => position !== null && position >= t.range[0] && position < t.range[1]);
+
+        if (position !== null && state.activeTokenId === null && state.hoveredTokenId === null && !isInsideToken) {
             const isContiguous = lastPositionRef.current === null || Math.abs(position - lastPositionRef.current) <= 1
             lastPositionRef.current = position
 
@@ -115,7 +117,7 @@ export default function Suggestions() {
             lastPositionRef.current = null
             dispatch({ type: "SET_SUGGESTIONS", payload: [] })
         }
-    }, [code, position, dispatch, resolver])
+    }, [code, position, dispatch, resolver, state.activeTokenId, state.hoveredTokenId, state.tokens])
 
     useEffect(() => {
         if (suggestionsRef.current && suggestionIndex >= 0) {

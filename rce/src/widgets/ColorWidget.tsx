@@ -99,14 +99,16 @@ export const ColorWidget: WidgetComponent = ({ children, token, renderDecorator 
     const displayHsv = isInteracting ? hsvRef.current : parseColorToHsv(colorText)
     const currentColor = hsvToHex(displayHsv.h, displayHsv.s, displayHsv.v)
 
+    const isActive = state.activeTokenId === token.id
+
     useEffect(() => {
-        if (isHovered && !visible) {
+        if ((isHovered || isActive) && !visible) {
             setVisible(true)
             hsvRef.current = parseColorToHsv(colorText)
-        } else if (!isHovered && visible && !isInteractingRef.current) {
+        } else if (!isHovered && !isActive && visible && !isInteractingRef.current) {
             setVisible(false)
         }
-    }, [isHovered, visible])
+    }, [isHovered, isActive, visible])
 
     const handleUpdate = (h: number, s: number, v: number, a: number) => {
         hsvRef.current = { h, s, v, a }
@@ -202,22 +204,46 @@ export const ColorWidget: WidgetComponent = ({ children, token, renderDecorator 
                     onMouseLeave={onMouseLeave}>
                     <ColorSpectrum 
                         hsv={displayHsv} 
-                        onStart={() => { setIsInteracting(true); isInteractingRef.current = true; }}
-                        onEnd={() => { setIsInteracting(false); isInteractingRef.current = false; }}
+                        onStart={() => { 
+                            setIsInteracting(true); 
+                            isInteractingRef.current = true; 
+                            dispatch({ type: "SET_ACTIVE_TOKEN", payload: token.id });
+                        }}
+                        onEnd={() => { 
+                            setIsInteracting(false); 
+                            isInteractingRef.current = false; 
+                            dispatch({ type: "SET_ACTIVE_TOKEN", payload: null });
+                        }}
                         onChange={(s: number, v: number) => handleUpdate(hsvRef.current.h, s, v, hsvRef.current.a)} 
                     />
                     <HueSlider 
                         h={displayHsv.h} 
-                        onStart={() => { setIsInteracting(true); isInteractingRef.current = true; }}
-                        onEnd={() => { setIsInteracting(false); isInteractingRef.current = false; }}
+                        onStart={() => { 
+                            setIsInteracting(true); 
+                            isInteractingRef.current = true; 
+                            dispatch({ type: "SET_ACTIVE_TOKEN", payload: token.id });
+                        }}
+                        onEnd={() => { 
+                            setIsInteracting(false); 
+                            isInteractingRef.current = false; 
+                            dispatch({ type: "SET_ACTIVE_TOKEN", payload: null });
+                        }}
                         onChange={(h: number) => handleUpdate(h, hsvRef.current.s, hsvRef.current.v, hsvRef.current.a)} 
                     />
                     {formatInfo.hasAlpha && (
                         <AlphaSlider
                             a={displayHsv.a}
                             color={currentColor}
-                            onStart={() => { setIsInteracting(true); isInteractingRef.current = true; }}
-                            onEnd={() => { setIsInteracting(false); isInteractingRef.current = false; }}
+                            onStart={() => { 
+                                setIsInteracting(true); 
+                                isInteractingRef.current = true; 
+                                dispatch({ type: "SET_ACTIVE_TOKEN", payload: token.id });
+                            }}
+                            onEnd={() => { 
+                                setIsInteracting(false); 
+                                isInteractingRef.current = false; 
+                                dispatch({ type: "SET_ACTIVE_TOKEN", payload: null });
+                            }}
                             onChange={(a: number) => handleUpdate(hsvRef.current.h, hsvRef.current.s, hsvRef.current.v, a)}
                         />
                     )}
