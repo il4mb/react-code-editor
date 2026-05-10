@@ -185,7 +185,7 @@ function App() {
                         {mode === 'css' ? (
                             <Editor
                                 key="css-editor"
-                                initialValue={"color: #4fc1ff\nbackground: #1e1e1e\nwidth: 100%\nheight: 100px\nborder: 2px dashed #4fc1ff"}
+                                initialValue={"border: 2px dashed rgba(255,0,0,0.5)"}
                                 onChange={handleCssChange}>
                                 <HighlighterProvider highlighter={cssHighlighter}>
                                     <DiagnosticsProvider validator={cssValidator}>

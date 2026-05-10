@@ -29,6 +29,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 code: action.payload
             }
             break
+        case "SET_HOVERED_TOKEN":
+            return {
+                ...state,
+                hoveredTokenId: action.payload
+            }
         case "UPDATE":
             nextState = {
                 ...state,

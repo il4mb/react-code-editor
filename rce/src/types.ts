@@ -58,6 +58,7 @@ export interface EditorState {
     suggestionIndex: number
     diagnostics: Diagnostic[]
     activeTokenId: string | null
+    hoveredTokenId: string | null
 }
 
 /** Mapping of action types to their payloads */
@@ -74,6 +75,7 @@ export type EditorActionMap = {
     SET_DIAGNOSTICS: Diagnostic[]
     SET_TOKEN_TEXT: { tokenId: string, newText: string }
     SET_ACTIVE_TOKEN: string | null
+    SET_HOVERED_TOKEN: string | null
     UPDATE: Partial<EditorState>
 }
 

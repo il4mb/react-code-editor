@@ -11,12 +11,19 @@ type Props = {
 };
 export default function WidgetsProvider({ children, widgets: initialWidgets, }: Props) {
     const [widgets, setWidgets] = useState(initialWidgets);
+    const { dispatch } = useEditor();
+
     useEffect(() => {
         setWidgets(prev => ({
             ...prev,
             ...initialWidgets
         }));
     }, [initialWidgets]);
+
+    // Sync widgets to editor state so reducer can use them
+    useEffect(() => {
+        dispatch({ type: "UPDATE", payload: { widgets } });
+    }, [widgets, dispatch]);
 
     const values = useMemo(() => ({
         ...widgets

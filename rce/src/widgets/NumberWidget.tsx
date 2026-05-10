@@ -21,7 +21,7 @@ const NumberBadge = styled("span")({
     },
 });
 
-export const NumberWidget: WidgetComponent = ({ children, token }) => {
+export const NumberWidget: WidgetComponent = ({ children, token, renderDecorator }: any) => {
     const { dispatch } = useEditor();
     
     const [dragging, setDragging] = useState(false);
@@ -54,7 +54,6 @@ export const NumberWidget: WidgetComponent = ({ children, token }) => {
             const totalDelta = me.clientX - initialX.current;
             let next = initialVal.current + totalDelta;
             
-            // Decimal precision check
             if (!tokenRef.current.text.includes(".")) {
                 next = Math.round(next);
             } else {
@@ -63,11 +62,9 @@ export const NumberWidget: WidgetComponent = ({ children, token }) => {
 
             const nextText = (next.toString() + initialUnit.current).replace(/[\r\n]/g, "");
             
-            // Update local state for instant widget display
             setLocalValue(nextText);
             localValueRef.current = nextText;
 
-            // REAL-TIME: Update global state immediately for visual preview
             dispatch({
                 type: "SET_TOKEN_TEXT",
                 payload: { tokenId: tokenRef.current.id, newText: nextText }
@@ -81,7 +78,6 @@ export const NumberWidget: WidgetComponent = ({ children, token }) => {
             document.removeEventListener("mouseup", onUp);
             document.body.style.cursor = "";
             
-            // Ensure final sync
             dispatch({
                 type: "SET_TOKEN_TEXT",
                 payload: { tokenId: tokenRef.current.id, newText: localValueRef.current }
@@ -96,12 +92,14 @@ export const NumberWidget: WidgetComponent = ({ children, token }) => {
 
     return (
         <>
-            <NumberBadge
-                onMouseDown={handleMouseDown}
-                contentEditable={false}
-                data-ignore="true">
-                ⬌
-            </NumberBadge>
+            {renderDecorator && (
+                <NumberBadge
+                    onMouseDown={handleMouseDown}
+                    contentEditable={false}
+                    data-ignore="true">
+                    ⬌
+                </NumberBadge>
+            )}
             {dragging ? localValue : children}
         </>
     );
@@ -110,11 +108,28 @@ export const NumberWidget: WidgetComponent = ({ children, token }) => {
 NumberWidget.widget = {
     tokenizer: (code: string) => {
         const ranges: [number, number][] = [];
-        const regex = /(?<![#\w])-?\b\d+(\.\d+)?\w*%?/gi;
+        
+        // 1. Identify all color function blocks to exclude them
+        const colorBlocks: [number, number][] = [];
+        const colorRegex = /rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/gi;
+        let colorMatch;
+        while ((colorMatch = colorRegex.exec(code)) !== null) {
+            colorBlocks.push([colorMatch.index, colorMatch.index + colorMatch[0].length]);
+        }
+
+        // 2. Match numbers normally
+        const numRegex = /(?<![#\w\(\,])-?\b\d+(\.\d+)?\w*%?/gi;
         let match;
-        while ((match = regex.exec(code)) !== null) {
+        while ((match = numRegex.exec(code)) !== null) {
+            const start = match.index;
+            const end = match.index + match[0].length;
+
+            // 3. Skip if this number is inside a color block
+            const isInsideColor = colorBlocks.some(block => start >= block[0] && end <= block[1]);
+            if (isInsideColor) continue;
+
             if (!match[0].includes("\n") && !match[0].includes("\r")) {
-                ranges.push([match.index, match.index + match[0].length]);
+                ranges.push([start, end]);
             }
         }
         return ranges;

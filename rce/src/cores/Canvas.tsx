@@ -58,25 +58,25 @@ const HighlightSpan = styled("span", {
 
 
 
-const MemoizedToken = React.memo(({ TokenComponent, token, isActive, children }: any) => {
+const MemoizedToken = React.memo(({ TokenComponent, token, isActive, isHovered, renderDecorator, children }: any) => {
     return (
-        <TokenComponent token={token}>
+        <TokenComponent token={token} renderDecorator={renderDecorator}>
             {children}
         </TokenComponent>
     );
 }, (prev, next) => {
-    // CRITICAL OPTIMIZATION: Ignore range shifts.
-    // If the token ID and text haven't changed, we don't need to re-render the widget
-    // just because its character offset in the file shifted.
     return prev.token.id === next.token.id &&
            prev.token.text === next.token.text && 
            prev.TokenComponent === next.TokenComponent &&
-           prev.isActive === next.isActive;
+           prev.isActive === next.isActive &&
+           prev.isHovered === next.isHovered &&
+           prev.renderDecorator === next.renderDecorator &&
+           prev.children === next.children;
 });
 
 export default function Canvas() {
     const { state, dispatch } = useEditor()
-    const { code, tokens, selection, diagnostics } = state
+    const { code, tokens, selection, diagnostics, activeTokenId, hoveredTokenId } = state
     const {
         editorRef,
         isComposing,
@@ -109,18 +109,19 @@ export default function Canvas() {
             let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
                     const id = token.id;
-                    
                     return (
                         <Span
                             segments={{
                                 start: segment.start,
                                 end: segment.end
                             }}
-                            key={id}>
+                            key={`${id}-${segment.start}-${segment.end}`}>
                             <MemoizedToken 
                                 TokenComponent={token.component}
                                 token={token}
-                                isActive={id === state.activeTokenId}>
+                                isActive={id === activeTokenId}
+                                isHovered={id === hoveredTokenId}
+                                renderDecorator={token.range[0] >= segment.start && token.range[0] < segment.end}>
                                 {children}
                             </MemoizedToken>
                         </Span>

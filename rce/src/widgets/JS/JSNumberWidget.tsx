@@ -21,7 +21,7 @@ const NumberBadge = styled("span")({
     },
 });
 
-export const JSNumberWidget: WidgetComponent = ({ children, token }) => {
+export const JSNumberWidget: WidgetComponent = ({ children, token, renderDecorator }: any) => {
     const { dispatch } = useEditor();
     
     const [dragging, setDragging] = useState(false);
@@ -61,12 +61,9 @@ export const JSNumberWidget: WidgetComponent = ({ children, token }) => {
             }
 
             const nextText = (next.toString() + initialUnit.current).replace(/[\r\n]/g, "");
-            
-            // Update local state for the widget display
             setLocalValue(nextText);
             localValueRef.current = nextText;
 
-            // REAL-TIME: Dispatch to global state
             dispatch({
                 type: "SET_TOKEN_TEXT",
                 payload: { tokenId: tokenRef.current.id, newText: nextText }
@@ -94,12 +91,14 @@ export const JSNumberWidget: WidgetComponent = ({ children, token }) => {
 
     return (
         <>
-            <NumberBadge
-                onMouseDown={handleMouseDown}
-                contentEditable={false}
-                data-ignore="true">
-                ⬌
-            </NumberBadge>
+            {renderDecorator && (
+                <NumberBadge
+                    onMouseDown={handleMouseDown}
+                    contentEditable={false}
+                    data-ignore="true">
+                    ⬌
+                </NumberBadge>
+            )}
             {dragging ? localValue : children}
         </>
     );
@@ -108,10 +107,27 @@ export const JSNumberWidget: WidgetComponent = ({ children, token }) => {
 JSNumberWidget.widget = {
     tokenizer: (code: string) => {
         const ranges: [number, number][] = [];
-        const regex = /(?<!#)-?\b\d+(\.\d+)?\w*%?/gi;
+        
+        // 1. Identify all color function blocks to exclude them
+        const colorBlocks: [number, number][] = [];
+        const colorRegex = /rgba?\s*\([^)]*\)|hsla?\s*\([^)]*\)/gi;
+        let colorMatch;
+        while ((colorMatch = colorRegex.exec(code)) !== null) {
+            colorBlocks.push([colorMatch.index, colorMatch.index + colorMatch[0].length]);
+        }
+
+        // 2. Match numbers normally
+        const numRegex = /(?<![#\w\(\,])-?\b\d+(\.\d+)?\w*%?/gi;
         let match;
-        while ((match = regex.exec(code)) !== null) {
-            ranges.push([match.index, match.index + match[0].length]);
+        while ((match = numRegex.exec(code)) !== null) {
+            const start = match.index;
+            const end = match.index + match[0].length;
+
+            // 3. Skip if this number is inside a color block
+            const isInsideColor = colorBlocks.some(block => start >= block[0] && end <= block[1]);
+            if (isInsideColor) continue;
+
+            ranges.push([start, end]);
         }
         return ranges;
     }
