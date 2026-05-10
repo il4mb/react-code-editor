@@ -18,7 +18,8 @@ export default function Editor({ children, initialValue, onChange }: EditorProps
         caretCoordinates: null,
         suggestions: [],
         suggestionIndex: 0,
-        diagnostics: []
+        diagnostics: [],
+        highlights: []
     })
 
     const lastReportedCode = useRef(state.code)

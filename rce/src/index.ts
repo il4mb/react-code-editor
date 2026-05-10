@@ -1,5 +1,5 @@
 export { default as Editor } from "./Editor"
 export { default as Shell } from "./Shell"
 export { useEditor } from "./Editor"
-export { WidgetPortal, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider } from "./cores"
+export { WidgetPortal, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider, HighlighterProvider, createRegexHighlighter } from "./cores"
 export * from "./types"

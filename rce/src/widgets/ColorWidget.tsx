@@ -34,6 +34,8 @@ export const ColorWidget: WidgetComponent = ({ children, token }) => {
                 <ColorSpan
                     onClick={toggleVisibility}
                     aria-hidden
+                    contentEditable={false}
+                    data-ignore="true"
                     sx={{ backgroundColor: color }}
                 />
             )}

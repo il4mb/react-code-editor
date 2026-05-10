@@ -1,4 +1,4 @@
-import { Editor, Shell, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider, Diagnostic } from '@il4mb/rce'
+import { Editor, Shell, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider, Diagnostic, HighlighterProvider, createRegexHighlighter } from '@il4mb/rce'
 import { ColorWidget, CSSName, CSSUnit, NumberWidget, BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget } from '@il4mb/rce/widgets'
 import { useState, useMemo, useCallback } from 'react';
 
@@ -110,6 +110,20 @@ function App() {
         ColorWidget, NumberWidget, CSSUnit, CSSName, BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget
     }), []);
 
+    const cssHighlighter = useMemo(() => createRegexHighlighter([
+        { regex: /^\s*[^:]+/gm, color: '#9cdcfe' }, // Properties
+        { regex: /:\s*[^;\n]+/g, color: '#ce9178' }, // Values
+        { regex: /\/\/.*/g, color: '#6a9955' },      // Comments
+    ]), []);
+
+    const jsHighlighter = useMemo(() => createRegexHighlighter([
+        { regex: /\b(const|let|var|function|return|if|else|for|while|import|export|class|extends|async|await)\b/g, color: '#569cd6' },
+        { regex: /(['"`])(.*?)\1/g, color: '#ce9178' },
+        { regex: /\b\d+(\.\d+)?\b/g, color: '#b5cea8' },
+        { regex: /\b(console|window|document)\b/g, color: '#4ec9b0' },
+        { regex: /\/\/.*/g, color: '#6a9955' },
+    ]), []);
+
     return (
         <div style={{ 
             padding: '2rem', 
@@ -139,8 +153,7 @@ function App() {
                         fontWeight: 'bold',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
-                    }}
-                >
+                    }}>
                     CSS Editor
                 </button>
                 <button 
@@ -170,26 +183,30 @@ function App() {
                                 key="css-editor"
                                 initialValue={"color: #4fc1ff\nbackground: #1e1e1e\nwidth: 100%\nheight: 100px\nborder: 2px dashed #4fc1ff"}
                                 onChange={handleCssChange}>
-                                <DiagnosticsProvider validator={cssValidator}>
-                                    <WidgetsProvider widgets={widgets}>
-                                        <SuggestionsProvider resolver={cssResolver}>
-                                            <Shell />
-                                        </SuggestionsProvider>
-                                    </WidgetsProvider>
-                                </DiagnosticsProvider>
+                                <HighlighterProvider highlighter={cssHighlighter}>
+                                    <DiagnosticsProvider validator={cssValidator}>
+                                        <WidgetsProvider widgets={widgets}>
+                                            <SuggestionsProvider resolver={cssResolver}>
+                                                <Shell />
+                                            </SuggestionsProvider>
+                                        </WidgetsProvider>
+                                    </DiagnosticsProvider>
+                                </HighlighterProvider>
                             </Editor>
                         ) : (
                             <Editor
                                 key="js-editor"
                                 initialValue={"function greet(name) {\n    return \"Hello, \" + name;\n}\n\nconst user = \"Coder\";\ngreet(user)"}
                                 onChange={handleJsChange}>
-                                <DiagnosticsProvider validator={jsValidator}>
-                                    <WidgetsProvider widgets={widgets}>
-                                        <SuggestionsProvider resolver={jsResolver}>
-                                            <Shell />
-                                        </SuggestionsProvider>
-                                    </WidgetsProvider>
-                                </DiagnosticsProvider>
+                                <HighlighterProvider highlighter={jsHighlighter}>
+                                    <DiagnosticsProvider validator={jsValidator}>
+                                        <WidgetsProvider widgets={widgets}>
+                                            <SuggestionsProvider resolver={jsResolver}>
+                                                <Shell />
+                                            </SuggestionsProvider>
+                                        </WidgetsProvider>
+                                    </DiagnosticsProvider>
+                                </HighlighterProvider>
                             </Editor>
                         )}
                     </div>

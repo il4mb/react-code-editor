@@ -44,6 +44,15 @@ const MatchHighlight = styled("span")({
     borderRadius: "2px",
 })
 
+const HighlightSpan = styled("span", {
+    shouldForwardProp: (prop) => !['color', 'backgroundColor', 'fontWeight', 'fontStyle'].includes(prop as string)
+})<{ color?: string, backgroundColor?: string, fontWeight?: string, fontStyle?: string }>(({ color, backgroundColor, fontWeight, fontStyle }) => ({
+    color,
+    backgroundColor,
+    fontWeight,
+    fontStyle
+}))
+
 
 
 export default function Canvas() {
@@ -64,8 +73,8 @@ export default function Canvas() {
     const matchingBraces = useBraceMatching(state)
     const segments = useMemo(() => {
         const extraBoundaries = matchingBraces ? [matchingBraces[0], matchingBraces[0] + 1, matchingBraces[1], matchingBraces[1] + 1] : []
-        return buildRenderSegments(code, tokens, diagnostics, extraBoundaries)
-    }, [code, tokens, diagnostics, matchingBraces])
+        return buildRenderSegments(code, tokens, diagnostics, extraBoundaries, state.highlights)
+    }, [code, tokens, diagnostics, matchingBraces, state.highlights])
     const content = useMemo(() => {
         const nodes: ReactNode[] = []
 
@@ -102,6 +111,22 @@ export default function Canvas() {
                         data-message={segment.diagnostics.map(d => d.message).join("\n")}>
                         {wrapped}
                     </DiagnosticDecorator>
+                )
+            }
+
+            // Apply highlights
+            if (segment.highlights.length > 0) {
+                // Apply first highlight (simple strategy for now)
+                const h = segment.highlights[0]
+                wrapped = (
+                    <HighlightSpan
+                        color={h.color}
+                        backgroundColor={h.backgroundColor}
+                        fontWeight={h.fontWeight}
+                        fontStyle={h.fontStyle}
+                        className={h.className}>
+                        {wrapped}
+                    </HighlightSpan>
                 )
             }
 

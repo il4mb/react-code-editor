@@ -1,41 +1,65 @@
 import { useEffect, useRef } from "react";
 import { useEditor } from "../Editor";
-import { Token, WidgetComponent } from "../type";
+import { Highlight } from "../type";
 
 interface HighlighterProviderProps {
     children: React.ReactNode;
-    tokenizer?: (code: string) => { range: [number, number], color?: string, className?: string }[];
+    highlighter?: (code: string) => Highlight[];
 }
 
-export default function HighlighterProvider({ children, tokenizer }: HighlighterProviderProps) {
+export default function HighlighterProvider({ children, highlighter }: HighlighterProviderProps) {
     const { state, dispatch } = useEditor();
     const lastCodeRef = useRef("");
+    const lastHighlightsRef = useRef<Highlight[]>([]);
 
     useEffect(() => {
-        if (!tokenizer || state.code === lastCodeRef.current) return;
+        if (!highlighter) {
+            if (lastHighlightsRef.current.length > 0) {
+                lastHighlightsRef.current = [];
+                dispatch({ type: "SET_HIGHLIGHTS", payload: [] });
+            }
+            return;
+        }
+
+        if (state.code === lastCodeRef.current) return;
         lastCodeRef.current = state.code;
 
-        const highlights = tokenizer(state.code);
+        const highlights = highlighter(state.code);
         
-        // Map highlights to tokens
-        const tokens: Token[] = highlights.map(h => ({
-            range: h.range,
-            component: createSyntaxComponent(h.color, h.className)
-        }));
+        // Simple comparison to avoid re-render loops
+        const isSame = highlights.length === lastHighlightsRef.current.length &&
+            highlights.every((h, i) => {
+                const prev = lastHighlightsRef.current[i];
+                return h.range[0] === prev.range[0] &&
+                       h.range[1] === prev.range[1] &&
+                       h.color === prev.color &&
+                       h.className === prev.className;
+            });
 
-        // We need to merge these with existing widget tokens?
-        // Actually, the current system might overwrite them if we dispatch SET_TOKENS.
-        // Wait! SET_TOKENS is dispatched by useEditorHandler based on widgets.
-        
-        // Maybe we should add a SET_HIGHLIGHTS action to the state and merge them in Canvas.tsx.
-    }, [state.code, tokenizer, dispatch]);
+        if (!isSame) {
+            lastHighlightsRef.current = highlights;
+            dispatch({ type: "SET_HIGHLIGHTS", payload: highlights });
+        }
+    }, [state.code, highlighter, dispatch]);
 
     return <>{children}</>;
 }
 
-function createSyntaxComponent(color?: string, className?: string): WidgetComponent {
-    const Component = ({ children }: { children: React.ReactNode }) => (
-        <span style={{ color }} className={className}>{children}</span>
-    );
-    return Component;
+/** Utility to create a regex-based highlighter */
+export function createRegexHighlighter(rules: { regex: RegExp, color?: string, className?: string }[]) {
+    return (code: string): Highlight[] => {
+        const highlights: Highlight[] = [];
+        for (const rule of rules) {
+            let match;
+            const regex = new RegExp(rule.regex, rule.regex.flags.includes('g') ? rule.regex.flags : rule.regex.flags + 'g');
+            while ((match = regex.exec(code)) !== null) {
+                highlights.push({
+                    range: [match.index, match.index + match[0].length],
+                    color: rule.color,
+                    className: rule.className
+                });
+            }
+        }
+        return highlights;
+    };
 }

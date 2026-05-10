@@ -9,6 +9,12 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 tokens: action.payload
             }
             break
+        case "SET_HIGHLIGHTS":
+            nextState = {
+                ...state,
+                highlights: action.payload
+            }
+            break
         case "SET_WIDGETS":
             nextState = {
                 ...state,

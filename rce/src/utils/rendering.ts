@@ -1,4 +1,4 @@
-import { Diagnostic, Token, WidgetComponent } from "../type"
+import { Diagnostic, Highlight, Token, WidgetComponent } from "../type"
 import { getTokenId } from "./tokenizer"
 import { containsRange, rangeLength } from "./range"
 
@@ -9,6 +9,7 @@ export type RenderSegment = {
     text: string
     tokens: Token[]
     diagnostics: Diagnostic[]
+    highlights: Highlight[]
 }
 
 const componentIds = new WeakMap<WidgetComponent, string>()
@@ -36,9 +37,15 @@ function sortActiveTokens(tokens: Token[]) {
     })
 }
 
-export function buildRenderSegments(code: string, tokens: Token[], diagnostics: Diagnostic[] = [], extraBoundaries: number[] = []): RenderSegment[] {
+export function buildRenderSegments(
+    code: string, 
+    tokens: Token[], 
+    diagnostics: Diagnostic[] = [], 
+    extraBoundaries: number[] = [],
+    highlights: Highlight[] = []
+): RenderSegment[] {
     if (!code.length) {
-        return [{ key: "empty", start: 0, end: 0, text: "", tokens: [], diagnostics: [] }]
+        return [{ key: "empty", start: 0, end: 0, text: "", tokens: [], diagnostics: [], highlights: [] }]
     }
 
     const boundaries = new Set<number>([0, code.length])
@@ -49,6 +56,10 @@ export function buildRenderSegments(code: string, tokens: Token[], diagnostics: 
     for (const diagnostic of diagnostics) {
         boundaries.add(diagnostic.range[0])
         boundaries.add(diagnostic.range[1])
+    }
+    for (const highlight of highlights) {
+        boundaries.add(highlight.range[0])
+        boundaries.add(highlight.range[1])
     }
     for (const boundary of extraBoundaries) {
         if (boundary >= 0 && boundary <= code.length) {
@@ -71,8 +82,9 @@ export function buildRenderSegments(code: string, tokens: Token[], diagnostics: 
         const sortedActiveTokens = sortActiveTokens(activeTokens)
         
         const activeDiagnostics = diagnostics.filter(diagnostic => containsRange(diagnostic.range, [start, end]))
+        const activeHighlights = highlights.filter(highlight => containsRange(highlight.range, [start, end]))
         
-        const key = `${start}:${end}:${sortedActiveTokens.length ? sortedActiveTokens.map(getTokenId).join("|") : "plain"}:${activeDiagnostics.length ? activeDiagnostics.map(d => `${d.severity}-${d.message}`).join("|") : "clean"}`
+        const key = `${start}:${end}:${sortedActiveTokens.length ? sortedActiveTokens.map(getTokenId).join("|") : "plain"}:${activeDiagnostics.length ? activeDiagnostics.map(d => `${d.severity}-${d.message}`).join("|") : "clean"}:${activeHighlights.length ? activeHighlights.map(h => `${h.color}-${h.className}`).join("|") : "neutral"}`
 
         segments.push({
             key,
@@ -80,9 +92,10 @@ export function buildRenderSegments(code: string, tokens: Token[], diagnostics: 
             end,
             text: code.slice(start, end),
             tokens: sortedActiveTokens,
-            diagnostics: activeDiagnostics
+            diagnostics: activeDiagnostics,
+            highlights: activeHighlights
         })
     }
 
-    return segments.length ? segments : [{ key: "plain", start: 0, end: code.length, text: code, tokens: [], diagnostics: [] }]
+    return segments.length ? segments : [{ key: "plain", start: 0, end: code.length, text: code, tokens: [], diagnostics: [], highlights: [] }]
 }

@@ -5,7 +5,15 @@ function isPlaceholderBr(node: Node) {
     && (node as HTMLElement).dataset.placeholder === "true"
 }
 
+function isIgnored(node: Node) {
+    return node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).dataset.ignore === "true"
+}
+
 function getNodeLength(node: Node): number {
+    if (isIgnored(node)) {
+        return 0
+    }
+
     if (node.nodeType === Node.TEXT_NODE) {
         return node.nodeValue?.length ?? 0
     }
@@ -32,7 +40,7 @@ function getOffsetWithinNode(node: Node, targetOffset: number): number {
 
     if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as HTMLElement
-        if (element.dataset.placeholder === "true") {
+        if (element.dataset.placeholder === "true" || element.dataset.ignore === "true") {
             return 0
         }
         if (element.tagName === "BR") {
@@ -74,6 +82,10 @@ function getLinearOffset(root: Node, targetNode: Node, targetOffset: number): nu
 
         if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === "BR") {
             offset += 1
+            return false
+        }
+
+        if (isIgnored(node)) {
             return false
         }
 
@@ -119,6 +131,10 @@ function locatePosition(root: Node, offset: number): { node: Node; offset: numbe
             }
 
             remaining -= 1
+            return null
+        }
+
+        if (isIgnored(node)) {
             return null
         }
 
