@@ -8,7 +8,8 @@ import React, {
     useEffect,
     useLayoutEffect,
     useMemo,
-    useRef
+    useRef,
+    useState
 } from "react"
 import { buildRenderSegments } from "../utils/rendering"
 import { getCaretCoordinates } from "../utils/caret"
@@ -88,6 +89,7 @@ export default function Canvas() {
         restoreSelection,
         syncSelection
     } = useEditorHandler(state, dispatch)
+    const [syncKey, setSyncKey] = useState(0)
 
     const matchingBraces = useBraceMatching(state)
     const stateRef = useRef(state)
@@ -188,6 +190,19 @@ export default function Canvas() {
         }
     }, [content, restoreSelection, selection, isComposing])
 
+    useLayoutEffect(() => {
+        const editor = editorRef.current
+        if (!editor || isComposing.current || state.activeTokenId !== null) return
+
+        const clone = editor.cloneNode(true) as HTMLElement
+        clone.querySelectorAll('[data-ignore="true"], [contenteditable="false"], [data-placeholder="true"]').forEach(node => node.remove())
+        const domCode = clone.textContent ?? ""
+
+        if (domCode !== code) {
+            setSyncKey(prev => prev + 1)
+        }
+    }, [code, content, editorRef, isComposing, state.activeTokenId])
+
     useEffect(() => {
         if (editorRef.current && state.position !== null) {
             const coordinates = getCaretCoordinates(editorRef.current)
@@ -200,6 +215,7 @@ export default function Canvas() {
     return (
         <EditableElement.Provider value={editorRef}>
             <CanvasElement
+                key={syncKey}
                 ref={editorRef}
                 contentEditable
                 suppressContentEditableWarning

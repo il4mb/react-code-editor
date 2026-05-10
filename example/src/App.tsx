@@ -23,6 +23,7 @@ function App() {
     const [jsOutput, setJsOutput] = useState<string>("");
 
     const handleCssChange = useCallback((code: string) => {
+        console.log("CSS Code Changed:", code);
         const records: [string, string][] = []
         for (let line of code.split("\n")) {
             const [prop, value] = line.split(':');

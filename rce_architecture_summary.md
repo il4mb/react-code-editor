@@ -28,8 +28,133 @@ The `editorReducer` handles `SET_TOKEN_TEXT` as an atomic operation:
 - **Source of Truth**: The reducer takes the `tokenId` and `newText`, performs the string substitution on the `code`, and immediately re-tokenizes the result using the `buildTokens` reconciliation.
 - **Widget Registration**: All widgets are synced into the global state via `WidgetsProvider`, ensuring the reducer always has the full map of tokenizers needed to maintain document integrity.
 
-## 5. Summary of Stability Rules
+## 5. Widget Hooks API
+
+To simplify custom widget development, RCE now provides high-level hooks that encapsulate common widget patterns:
+
+### `useWidgetToken(token)`
+Provides dispatch helpers and state readers for widget token manipulation:
+- `setText(newText)` – Update token text with automatic newline sanitization
+- `setActive()` / `clearActive()` – Manage active token state
+- `setHovered()` / `clearHovered()` – Manage hover state
+- `isActive`, `isHovered`, `text` – Read current state
+- `tokenRef` – Fresh token reference for event handlers (avoids stale closures)
+
+**Use case:** Simplifies token interaction without manual `useEditor()` dispatch.
+
+### `useWidgetDrag(options)`
+Manages document-level drag interactions with automatic cleanup:
+- `onStart(event)` – Called when drag begins
+- `onMove({ event, deltaX, deltaY })` – Called on every mousemove
+- `onEnd()` – Called on mouseup
+- Returns `{ dragging: boolean, onMouseDown }` for attaching to elements
+
+**Features:**
+- Automatic mouse cursor management
+- Document-level event listener cleanup
+- Prevention of text selection during drag
+- Left-click only (ignores right-click and middle-click)
+
+**Use case:** Simplifies building draggable widgets without boilerplate event handling.
+
+### `sanitizeWidgetText(value)`
+Strips newline characters from a string. Called automatically by `setText()`, but available for explicit use.
+
+**Widget Hooks Philosophy:**
+- **Low-level control:** Both hooks are optional; widgets can still use `useEditor()` directly if needed
+- **Composition-friendly:** Hooks compose well together (`useWidgetToken` + `useWidgetDrag`)
+- **Closure safety:** Hooks provide refs and refs-based patterns to avoid stale closures in event handlers
+- **Minimal overhead:** Hooks are thin wrappers around existing editor dispatch; no additional state management
+
+## 6. ContentEditable DOM Safety
+
+Recent bug fixes revealed that contentEditable DOM can drift from React state if not carefully managed:
+
+### Live DOM Code Extraction
+Instead of relying on React state (`state.code`), text-reading operations now extract code directly from the DOM:
+
+```typescript
+function getEditorCodeFromDom(editor: HTMLDivElement): string {
+  const clone = editor.cloneNode(true) as HTMLDivElement
+  // Strip non-editable decorators
+  clone.querySelectorAll('[data-ignore], [contenteditable="false"], [data-placeholder]')
+    .forEach(el => el.remove())
+  return clone.textContent || ""
+}
+```
+
+**Why:** `beforeinput` event handlers can fire with stale closures over `state.code`. Reading from the DOM guarantees current state.
+
+**Applied in:** `useEditorHandler.ts` (`beforeinput` handlers), all text-insertion logic.
+
+### Non-Editable Markers
+Widget decorators are explicitly marked as non-editable:
+
+```typescript
+<div contentEditable={false} data-placeholder>
+  🎨  {/* This won't be included in code text */}
+</div>
+```
+
+**Why:** Prevents decorator elements from leaking into the editable code.
+
+### DOM/Code Desync Detection
+Canvas includes a self-healing mechanism that detects when DOM diverges from React state:
+
+```typescript
+const editorCode = getEditorCodeFromDom(editor.current)
+if (editorCode.length !== state.code.length && !state.activeTokenId) {
+  // Trigger remount to force React reconciliation
+  setSyncKey(prev => prev + 1)
+}
+```
+
+**Why:** Stale React fragments can accumulate in the DOM. This forces a clean re-render.
+
+## 7. Summary of Stability Rules
+
+Core principles for maintaining a stable, interactive editor:
+
 - **Never use range as a key**: Always use `token.id`.
-- **Never pass anonymous functions to widgets**: Use direct dispatch.
+- **Never pass anonymous functions to widgets**: Use direct dispatch or stable callback refs.
 - **Ignore range in memo comparison**: Only check `id`, `text`, and `isActive`.
 - **Always use refs for interaction logic**: Avoid stale closures in document event listeners.
+- **Read code from DOM, not state**: In `beforeinput` handlers, call `getEditorCodeFromDom()` instead of relying on `state.code`.
+- **Mark decorators non-editable**: All widget decorators should have `contentEditable={false}`.
+- **Sanitize widget output**: Widgets should strip newlines before calling `setText()` (or use the hook which does it automatically).
+
+## 8. Rendering Segment Strategy
+
+The render layer converts code + tokens + diagnostics into React segments for efficient DOM updates:
+
+### Segment Key Determinism
+- **Token segments** (decorated ranges): Use token ID-based keys: `token-{tokenId}`
+  - Stable across text changes in other parts of the code
+  - Allows token components to remount when their ID changes
+  
+- **Plain segments** (undecorated ranges): Use range-start identifiers: `plain-{start}`
+  - Unique per position to prevent stale fragment reuse
+  - Never reused even if text content changes
+
+### Segment Ordering
+Overlapping tokens are sorted by length (longest first) to ensure correct nesting:
+
+```typescript
+function sortActiveTokens(tokens: Token[]): Token[] {
+  return [...tokens].sort((a, b) => {
+    const lenA = a.end - a.start
+    const lenB = b.end - b.start
+    return lenB - lenA  // Longest first
+  })
+}
+```
+
+**Why:** Prevents shorter tokens from visually dominating longer decorators.
+
+---
+
+## References & Further Reading
+
+- **Widget Hooks API:** See [WIDGET_HOOKS_API.md](./WIDGET_HOOKS_API.md) for complete API documentation and examples
+- **Custom Widget Development:** See [CUSTOM_WIDGETS_GUIDE.md](./CUSTOM_WIDGETS_GUIDE.md) for step-by-step guides
+- **Recent Changes:** See [CHANGELOG.md](./CHANGELOG.md) for bug fixes and new features
