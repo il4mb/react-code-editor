@@ -34,6 +34,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 ...state,
                 hoveredTokenId: action.payload
             }
+        case "SET_SUGGESTIONS_TRIGGERED_BY_TYPING":
+            return {
+                ...state,
+                suggestionsTriggeredByTyping: action.payload
+            }
         case "UPDATE":
             nextState = {
                 ...state,

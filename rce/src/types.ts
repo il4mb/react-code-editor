@@ -66,6 +66,7 @@ export interface EditorState {
     diagnostics: Diagnostic[]
     activeTokenId: string | null
     hoveredTokenId: string | null
+    suggestionsTriggeredByTyping: boolean
 }
 
 /** Mapping of action types to their payloads */
@@ -83,6 +84,7 @@ export type EditorActionMap = {
     SET_TOKEN_TEXT: { tokenId: string, newText: string }
     SET_ACTIVE_TOKEN: string | null
     SET_HOVERED_TOKEN: string | null
+    SET_SUGGESTIONS_TRIGGERED_BY_TYPING: boolean
     UPDATE: Partial<EditorState>
 }
 

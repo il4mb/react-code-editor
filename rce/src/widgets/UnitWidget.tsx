@@ -57,7 +57,7 @@ const UnitOption = styled("div")({
 
 const UNITS = ["px", "rem", "em", "%", "vh", "vw", "pt", "pc", "vmin", "vmax", "ch", "ex"];
 
-export const UnitWidget: WidgetComponent = ({ children, token }: any) => {
+export const UnitWidget: WidgetComponent = ({ children, token }) => {
     const { dispatch, state } = useEditor();
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -102,7 +102,7 @@ export const UnitWidget: WidgetComponent = ({ children, token }: any) => {
     return (
         <>
             {children}
-            <UnitBadge ref={badgeRef} onClick={toggleDropdown} data-ignore="true">
+            <UnitBadge ref={badgeRef} onClick={toggleDropdown} data-ignore="true" contentEditable={false}>
                 ▾
             </UnitBadge>
             <WidgetPortal anchor={badgeRef} anchorOrigin={{ vertical: "bottom", horizontal: "left" }}>

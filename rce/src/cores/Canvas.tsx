@@ -67,6 +67,8 @@ const MemoizedToken = React.memo(({ TokenComponent, token, isActive, isHovered, 
 }, (prev, next) => {
     return prev.token.id === next.token.id &&
            prev.token.text === next.token.text && 
+           prev.token.range[0] === next.token.range[0] &&
+           prev.token.range[1] === next.token.range[1] &&
            prev.TokenComponent === next.TokenComponent &&
            prev.isActive === next.isActive &&
            prev.isHovered === next.isHovered &&

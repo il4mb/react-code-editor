@@ -29,6 +29,7 @@ export function useKeyboardActions({
         // Undo/Redo
         if (isModKey && event.key.toLowerCase() === "z") {
             event.preventDefault();
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false });
             const next = event.shiftKey ? redo() : undo();
             if (next) {
                 applySnapshot(next, event.shiftKey ? "redo" : "undo");
@@ -38,9 +39,25 @@ export function useKeyboardActions({
 
         if (isModKey && !event.shiftKey && event.key.toLowerCase() === "y") {
             event.preventDefault();
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false });
             const next = redo();
             if (next) applySnapshot(next, "redo");
             return;
+        }
+
+        const navigationKeys = new Set([
+            "ArrowLeft",
+            "ArrowRight",
+            "ArrowUp",
+            "ArrowDown",
+            "Home",
+            "End",
+            "PageUp",
+            "PageDown"
+        ]);
+
+        if (navigationKeys.has(event.key)) {
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false });
         }
 
         // Auto-closing brackets
@@ -54,6 +71,7 @@ export function useKeyboardActions({
 
         if (pairs[event.key]) {
             event.preventDefault();
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true });
             const char = event.key;
             const closeChar = pairs[char];
             const pos = state.position ?? 0;
@@ -131,12 +149,14 @@ export function useKeyboardActions({
                         position: nextPosition
                     });
                     dispatch({ type: "SET_SUGGESTIONS", payload: [] });
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false });
                 }
                 return;
             }
             if (event.key === "Escape") {
                 event.preventDefault();
                 dispatch({ type: "SET_SUGGESTIONS", payload: [] });
+                dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false });
                 return;
             }
         }

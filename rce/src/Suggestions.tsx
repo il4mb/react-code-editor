@@ -98,7 +98,13 @@ export default function Suggestions() {
     useEffect(() => {
         const isInsideToken = state.tokens.some(t => position !== null && position >= t.range[0] && position < t.range[1]);
 
-        if (position !== null && state.activeTokenId === null && state.hoveredTokenId === null && !isInsideToken) {
+        if (
+            position !== null &&
+            state.suggestionsTriggeredByTyping &&
+            state.activeTokenId === null &&
+            state.hoveredTokenId === null &&
+            !isInsideToken
+        ) {
             const isContiguous = lastPositionRef.current === null || Math.abs(position - lastPositionRef.current) <= 1
             lastPositionRef.current = position
 
@@ -117,7 +123,16 @@ export default function Suggestions() {
             lastPositionRef.current = null
             dispatch({ type: "SET_SUGGESTIONS", payload: [] })
         }
-    }, [code, position, dispatch, resolver, state.activeTokenId, state.hoveredTokenId, state.tokens])
+    }, [
+        code,
+        position,
+        dispatch,
+        resolver,
+        state.activeTokenId,
+        state.hoveredTokenId,
+        state.tokens,
+        state.suggestionsTriggeredByTyping
+    ])
 
     useEffect(() => {
         if (suggestionsRef.current && suggestionIndex >= 0) {
@@ -136,6 +151,7 @@ export default function Suggestions() {
         dispatch({ type: "SET_POSITION", payload: nextPosition })
         dispatch({ type: "SET_SELECTION", payload: [nextPosition, nextPosition] })
         dispatch({ type: "SET_SUGGESTIONS", payload: [] })
+        dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
     }
 
     if (!coordinates || suggestions.length === 0) return null

@@ -84,22 +84,15 @@ export function buildRenderSegments(
         const activeDiagnostics = diagnostics.filter(diagnostic => containsRange(diagnostic.range, [start, end]))
         const activeHighlights = highlights.filter(highlight => containsRange(highlight.range, [start, end]))
         
-        // STABLE KEY LOGIC:
-        // Instead of using start:end, we use the IDs of the tokens that define this segment.
-        // This ensures that if the tokens move, the segment's key moves with them.
-        let key = "plain";
-        if (sortedActiveTokens.length > 0) {
-            key = `token-${sortedActiveTokens.map(t => t.id).join("-")}`;
-        } else if (activeHighlights.length > 0) {
-            key = `hl-${activeHighlights.map(h => h.className || "colored").join("-")}`;
-        } else if (activeDiagnostics.length > 0) {
-            key = `diag-${activeDiagnostics.map(d => d.severity).join("-")}`;
-        }
-        
-        // Add a sequence number to distinguish between multiple segments of the same type/tokens
-        // (e.g. text between tokens)
-        const sequence = segments.filter(s => s.key.startsWith(key)).length;
-        const finalKey = `${key}:${sequence}`;
+        const tokenKey = sortedActiveTokens.map(token => getTokenId(token)).join("|") || "none"
+        const highlightKey = activeHighlights.map(highlight => {
+            const className = highlight.className ?? ""
+            return `${highlight.range[0]}-${highlight.range[1]}-${className}`
+        }).join("|") || "none"
+        const diagnosticKey = activeDiagnostics.map(diagnostic => {
+            return `${diagnostic.range[0]}-${diagnostic.range[1]}-${diagnostic.severity}`
+        }).join("|") || "none"
+        const finalKey = `seg:${start}:${end}:t:${tokenKey}:h:${highlightKey}:d:${diagnosticKey}`
 
         segments.push({
             key: finalKey,

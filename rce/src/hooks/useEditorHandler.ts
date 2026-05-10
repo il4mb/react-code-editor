@@ -14,6 +14,27 @@ import { useSelection } from "./useSelection"
 import { useKeyboardActions } from "./useKeyboardActions"
 import { getSelectionOffsets } from "../utils/caret"
 
+function getEditorCodeFromDom(editor: HTMLElement) {
+    const clone = editor.cloneNode(true) as HTMLElement
+    clone.querySelectorAll('[data-ignore="true"], [contenteditable="false"], [data-placeholder="true"]').forEach(node => node.remove())
+    return clone.textContent ?? ""
+}
+
+function getLiveEditorSnapshot(editor: HTMLElement) {
+    const code = getEditorCodeFromDom(editor)
+    const selection = getSelectionOffsets(editor) ?? [code.length, code.length]
+    const clampedSelection: Range = [
+        Math.min(selection[0], code.length),
+        Math.min(selection[1], code.length)
+    ]
+
+    return {
+        code,
+        selection: clampedSelection,
+        position: clampedSelection[0] === clampedSelection[1] ? clampedSelection[1] : null
+    }
+}
+
 export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<EditorAction>) {
     const widgets = useWidgets();
     const editorRef = useRef<HTMLElement>(null)
@@ -76,33 +97,39 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         // Editor specific keys
         if (event.key === "Tab") {
             event.preventDefault()
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
             applyResult(indent(state))
         } else if (event.key === "Enter") {
             event.preventDefault()
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
             applyResult(insertNewLine(state))
         } else if (event.key === "Backspace") {
             event.preventDefault()
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
             applyResult(deleteBackward(state, isMod ? 'word' : 'char'))
         } else if (event.key === "Delete") {
             event.preventDefault()
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
             applyResult(deleteForward(state, isMod ? 'word' : 'char'))
         }
-    }, [baseKeyDown, applyResult, state])
+    }, [baseKeyDown, applyResult, dispatch, state])
 
     const handlePaste = useCallback((event: React.ClipboardEvent<HTMLElement>) => {
         if (isComposing.current) return
         const text = event.clipboardData.getData("text/plain")
         if (text) {
             event.preventDefault()
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
             applyResult(insertText(state, text))
         }
-    }, [applyResult, state])
+    }, [applyResult, dispatch, state])
 
     const handleCompositionStart = useCallback(() => { isComposing.current = true }, [])
     const handleCompositionEnd = useCallback((event: React.CompositionEvent<HTMLElement>) => {
         isComposing.current = false
+        dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
         const editor = editorRef.current ?? event.currentTarget
-        const nextCode = editor.textContent ?? ""
+        const nextCode = getEditorCodeFromDom(editor)
         const range = getSelectionOffsets(editor) ?? [nextCode.length, nextCode.length]
         const clampedRange: Range = [Math.min(range[0], nextCode.length), Math.min(range[1], nextCode.length)]
         applySnapshot({
@@ -110,7 +137,7 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
             selection: clampedRange,
             position: clampedRange[0] === clampedRange[1] ? clampedRange[1] : null
         })
-    }, [applySnapshot])
+    }, [applySnapshot, dispatch])
 
     // Native beforeinput listener for maximum reliability
     useEffect(() => {
@@ -123,13 +150,29 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
 
             const { inputType, data } = inputEvent
             const char = data ?? ""
+            const liveState = getLiveEditorSnapshot(editor)
 
             const handlers: Record<string, () => void> = {
-                insertText: () => applyResult(insertText(state, char)),
-                deleteContentBackward: () => applyResult(deleteBackward(state)),
-                deleteContentForward: () => applyResult(deleteForward(state)),
-                insertLineBreak: () => applyResult(insertNewLine(state)),
-                insertParagraph: () => applyResult(insertNewLine(state))
+                insertText: () => {
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
+                    applyResult(insertText(liveState, char))
+                },
+                deleteContentBackward: () => {
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
+                    applyResult(deleteBackward(liveState))
+                },
+                deleteContentForward: () => {
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: true })
+                    applyResult(deleteForward(liveState))
+                },
+                insertLineBreak: () => {
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
+                    applyResult(insertNewLine(liveState))
+                },
+                insertParagraph: () => {
+                    dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
+                    applyResult(insertNewLine(liveState))
+                }
             }
 
             if (handlers[inputType]) {
@@ -147,7 +190,7 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
                 return
             }
 
-            const nextCode = editor.textContent ?? ""
+            const nextCode = getEditorCodeFromDom(editor)
             const range = getSelectionOffsets(editor) ?? [nextCode.length, nextCode.length]
             const clampedRange: Range = [Math.min(range[0], nextCode.length), Math.min(range[1], nextCode.length)]
 
@@ -164,7 +207,7 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
             editor.removeEventListener("beforeinput", onBeforeInput)
             editor.removeEventListener("input", onInput)
         }
-    }, [applyResult, applySnapshot, state, syncSelection])
+    }, [applyResult, applySnapshot, dispatch, state, syncSelection])
 
     // Sync selection on global selection change
     useEffect(() => {
@@ -203,7 +246,10 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         handlePaste,
         handleCompositionStart,
         handleCompositionEnd,
-        handleMouseUp: syncSelection,
+        handleMouseUp: () => {
+            dispatch({ type: "SET_SUGGESTIONS_TRIGGERED_BY_TYPING", payload: false })
+            syncSelection()
+        },
         restoreSelection,
         syncSelection
     }
