@@ -1,4 +1,4 @@
-import { EditorAction, EditorState } from "../type"
+import { EditorAction, EditorState } from "../types"
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
     let nextState: EditorState = state
 

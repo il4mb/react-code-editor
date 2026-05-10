@@ -1,35 +1,115 @@
 import { styled } from "@mui/system"
-import { WidgetComponent } from "../type"
+import { WidgetComponent } from "../types"
+import { useEffect, useRef } from "react";
 
-const Span = styled("span")({
-    color: "#0c845f"
-})
+const NumberBadge = styled("span")({
+    display: "inline-flex",
+    padding: "0 4px",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: "3px",
+    fontSize: "10px",
+    color: "#4fc1ff",
+    cursor: "ew-resize",
+    marginLeft: "4px",
+    userSelect: "none",
+    verticalAlign: "middle",
+    "&:hover": {
+        backgroundColor: "rgba(255, 255, 255, 0.1)",
+        borderColor: "rgba(255, 255, 255, 0.3)",
+    },
+});
 
-const NUMBER_PATTERN = /(^|[^\w.])(-?(?:\d+\.\d+|\d+|\.\d+)(?:e[+-]?\d+)?)(?![\w%])/gi
+export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => {
+    const isDragging = useRef(false);
+    const initialX = useRef(0);
+    const initialVal = useRef(0);
 
-export const NumberWidget: WidgetComponent = ({ children, token }) => {
+    const onChangeRef = useRef(onChange);
+    const tokenRef = useRef(token);
+
+    onChangeRef.current = onChange;
+    tokenRef.current = token;
+
+    useEffect(() => {
+        return () => {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+            if (isDragging.current) {
+                document.body.style.cursor = "";
+            }
+        };
+    }, []);
+
+    const onMouseDown = (e: React.MouseEvent) => {
+        const text = tokenRef.current?.text || "";
+        const val = parseFloat(text);
+        if (isNaN(val)) return;
+
+        isDragging.current = true;
+        initialX.current = e.clientX;
+        initialVal.current = val;
+
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        document.body.style.cursor = "ew-resize";
+        e.preventDefault();
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+        if (!isDragging.current || !tokenRef.current) return;
+
+        const totalDelta = e.clientX - initialX.current;
+        const currentText = tokenRef.current.text || "";
+
+        let next = initialVal.current + totalDelta;
+
+        if (!currentText.includes(".")) {
+            next = Math.round(next);
+        } else {
+            next = parseFloat(next.toFixed(2));
+        }
+
+        const nextText = next.toString();
+        if (nextText !== currentText) {
+            console.log('nextText', nextText);
+            console.log('currentText', currentText);
+            onChangeRef.current(nextText);
+        }
+    };
+
+    const onMouseUp = () => {
+        isDragging.current = false;
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        document.body.style.cursor = "";
+    };
+
     return (
-        <Span
-            data-token-start={token.range[0]}
-            data-token-end={token.range[1]}>
+        <>
+            <NumberBadge
+                onMouseDown={onMouseDown}
+                contentEditable={false}
+                data-ignore="true">
+                ⬌
+            </NumberBadge>
             {children}
-        </Span>
-    )
+        </>
+    );
 }
 
 NumberWidget.widget = {
     tokenizer(code: string) {
         const ranges: [number, number][] = []
+        // Match numbers ONLY. Units like 'px' are left outside the token range
+        // so they are naturally preserved by the editor's update logic.
+        const regex = /-?\b\d+(\.\d+)?/gi;
         let match: RegExpExecArray | null
 
-        NUMBER_PATTERN.lastIndex = 0
-        while ((match = NUMBER_PATTERN.exec(code)) !== null) {
-            const prefixLength = match[1]?.length ?? 0
-            const start = match.index + prefixLength
-            const end = start + match[2].length
-            ranges.push([start, end])
+        regex.lastIndex = 0
+        while ((match = regex.exec(code)) !== null) {
+            ranges.push([match.index, match.index + match[0].length])
         }
-
         return ranges
     }
 }

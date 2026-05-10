@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react"
-import { EditorAction, EditorState, Range } from "../type"
+import { EditorAction, EditorState, Range } from "../types"
 import {
     deleteBackward,
     deleteForward,

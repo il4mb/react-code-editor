@@ -34,7 +34,7 @@ const ToggleCircle = styled("span")({
     },
 });
 
-export function BooleanWidget({ token, onChange }: WidgetComponentProps) {
+export function BooleanWidget({ children, token, onChange }: WidgetComponentProps) {
     const value = token.text === "true";
     
     const toggle = () => {
@@ -42,9 +42,17 @@ export function BooleanWidget({ token, onChange }: WidgetComponentProps) {
     };
 
     return (
-        <ToggleButton className={value ? "active" : ""} onClick={toggle}>
-            <ToggleCircle />
-        </ToggleButton>
+        <>
+            <ToggleButton 
+                className={value ? "active" : ""} 
+                onClick={toggle}
+                contentEditable={false}
+                data-ignore="true"
+            >
+                <ToggleCircle />
+            </ToggleButton>
+            {children}
+        </>
     );
 }
 

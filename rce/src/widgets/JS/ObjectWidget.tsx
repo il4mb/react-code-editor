@@ -14,8 +14,18 @@ const ObjBadge = styled("span")({
     cursor: "help",
 });
 
-export function ObjectWidget({ token }: WidgetComponentProps) {
-    return <ObjBadge>{'{...}'}</ObjBadge>;
+export function ObjectWidget({ children, token }: WidgetComponentProps) {
+    return (
+        <>
+            <ObjBadge
+                contentEditable={false}
+                data-ignore="true"
+            >
+                {'{...}'}
+            </ObjBadge>
+            {children}
+        </>
+    );
 }
 
 ObjectWidget.widget = {

@@ -21,11 +21,18 @@ const FuncIcon = styled("span")({
     transition: "all 0.2s",
 });
 
-export function FunctionWidget({ token }: WidgetComponentProps) {
+export function FunctionWidget({ children, token }: WidgetComponentProps) {
     return (
-        <FuncIcon title={`Function defined at offset ${token.range[0]}`}>
-            λ
-        </FuncIcon>
+        <>
+            <FuncIcon 
+                title={`Function defined at offset ${token.range[0]}`}
+                contentEditable={false}
+                data-ignore="true"
+            >
+                λ
+            </FuncIcon>
+            {children}
+        </>
     );
 }
 

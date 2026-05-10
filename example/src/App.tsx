@@ -106,8 +106,12 @@ function App() {
         return JS_KEYWORDS.filter(k => k.startsWith(word.toLowerCase()));
     }, []);
 
-    const widgets = useMemo(() => ({ 
-        ColorWidget, NumberWidget, CSSUnit, CSSName, BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget
+    const cssWidgets = useMemo(() => ({ 
+        ColorWidget, NumberWidget, CSSName
+    }), []);
+
+    const jsWidgets = useMemo(() => ({ 
+        BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget
     }), []);
 
     const cssHighlighter = useMemo(() => createRegexHighlighter([
@@ -185,7 +189,7 @@ function App() {
                                 onChange={handleCssChange}>
                                 <HighlighterProvider highlighter={cssHighlighter}>
                                     <DiagnosticsProvider validator={cssValidator}>
-                                        <WidgetsProvider widgets={widgets}>
+                                        <WidgetsProvider widgets={cssWidgets}>
                                             <SuggestionsProvider resolver={cssResolver}>
                                                 <Shell />
                                             </SuggestionsProvider>
@@ -200,7 +204,7 @@ function App() {
                                 onChange={handleJsChange}>
                                 <HighlighterProvider highlighter={jsHighlighter}>
                                     <DiagnosticsProvider validator={jsValidator}>
-                                        <WidgetsProvider widgets={widgets}>
+                                        <WidgetsProvider widgets={jsWidgets}>
                                             <SuggestionsProvider resolver={jsResolver}>
                                                 <Shell />
                                             </SuggestionsProvider>

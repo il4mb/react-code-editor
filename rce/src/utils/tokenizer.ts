@@ -64,7 +64,11 @@ export function buildTokens(code: string, widgets: { [key: string]: WidgetCompon
         const id = `${getComponentId(token.component)}:${token.range[0]}:${token.range[1]}`
         if (seen.has(id)) continue
         seen.add(id)
-        deduped.push({ component: token.component, range: token.range })
+        deduped.push({ 
+            component: token.component, 
+            range: token.range,
+            text: code.slice(token.range[0], token.range[1])
+        })
     }
 
     return deduped

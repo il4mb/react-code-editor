@@ -16,8 +16,18 @@ const NullBadge = styled("span")({
     letterSpacing: "0.05em",
 });
 
-export function NullWidget({ token }: WidgetComponentProps) {
-    return <NullBadge>∅ {token.text}</NullBadge>;
+export function NullWidget({ children, token }: WidgetComponentProps) {
+    return (
+        <>
+            <NullBadge
+                contentEditable={false}
+                data-ignore="true"
+            >
+                ∅ {token.text}
+            </NullBadge>
+            {children}
+        </>
+    );
 }
 
 NullWidget.widget = {

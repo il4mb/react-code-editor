@@ -5,12 +5,14 @@ export type Range = [number, number]
 export type Token = {
     component: WidgetComponent
     range: Range
+    text: string
 }
 
 /** A component that renders a token and provides a tokenizer */
 export type WidgetComponent = React.FC<{
     children?: React.ReactNode
     token: Token
+    onChange: (text: string) => void
 }> & {
     widget: {
         /** Returns ranges in the code that should be decorated with this widget */

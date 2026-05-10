@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useEditor } from "../Editor";
-import { Highlight } from "../type";
+import { Highlight } from "../types";
 
 interface HighlighterProviderProps {
     children: React.ReactNode;

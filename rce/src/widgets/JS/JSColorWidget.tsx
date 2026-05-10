@@ -17,7 +17,7 @@ const ColorPreview = styled("span")({
     },
 });
 
-export function JSColorWidget({ token, onChange }: WidgetComponentProps) {
+export function JSColorWidget({ children, token, onChange }: WidgetComponentProps) {
     const text = token.text;
     // Extract color from string (removing quotes)
     const quote = text[0];
@@ -28,21 +28,28 @@ export function JSColorWidget({ token, onChange }: WidgetComponentProps) {
     };
 
     return (
-        <ColorPreview style={{ backgroundColor: colorValue }}>
-            <input
-                type="color"
-                value={colorValue.startsWith("#") ? colorValue : "#ffffff"}
-                onChange={onColorChange}
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    opacity: 0,
-                    width: "100%",
-                    height: "100%",
-                    cursor: "pointer",
-                }}
-            />
-        </ColorPreview>
+        <>
+            <ColorPreview 
+                style={{ backgroundColor: colorValue }}
+                contentEditable={false}
+                data-ignore="true"
+            >
+                <input
+                    type="color"
+                    value={colorValue.startsWith("#") ? colorValue : "#ffffff"}
+                    onChange={onColorChange}
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        opacity: 0,
+                        width: "100%",
+                        height: "100%",
+                        cursor: "pointer",
+                    }}
+                />
+            </ColorPreview>
+            {children}
+        </>
     );
 }
 

@@ -82,6 +82,12 @@ export default function Canvas() {
             let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
                     const TokenComponent = token.component
+                    
+                    const handleWidgetChange = (newText: string) => {
+                        const newCode = state.code.slice(0, token.range[0]) + newText + state.code.slice(token.range[1]);
+                        dispatch({ type: "SET_CODE", payload: newCode });
+                    };
+
                     return (
                         <Span
                             as={TokenComponent}
@@ -90,7 +96,8 @@ export default function Canvas() {
                                 end: segment.end
                             }}
                             key={`${segment.key}:${token.range[0]}:${token.range[1]}`}
-                            token={token}>
+                            token={token}
+                            onChange={handleWidgetChange}>
                             {children}
                         </Span>
                     )
