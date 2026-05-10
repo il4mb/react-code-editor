@@ -84,15 +84,23 @@ export function buildRenderSegments(
         const activeDiagnostics = diagnostics.filter(diagnostic => containsRange(diagnostic.range, [start, end]))
         const activeHighlights = highlights.filter(highlight => containsRange(highlight.range, [start, end]))
         
-        const tokenKey = sortedActiveTokens.map(token => getTokenId(token)).join("|") || "none"
-        const highlightKey = activeHighlights.map(highlight => {
-            const className = highlight.className ?? ""
-            return `${highlight.range[0]}-${highlight.range[1]}-${className}`
-        }).join("|") || "none"
-        const diagnosticKey = activeDiagnostics.map(diagnostic => {
-            return `${diagnostic.range[0]}-${diagnostic.range[1]}-${diagnostic.severity}`
-        }).join("|") || "none"
-        const finalKey = `seg:${start}:${end}:t:${tokenKey}:h:${highlightKey}:d:${diagnosticKey}`
+        let finalKey = `plain:${start}`
+
+        if (sortedActiveTokens.length > 0) {
+            // Keep widget-hosting segments stable while token text length changes.
+            // Using token IDs + start avoids remounting during interactive updates.
+            finalKey = `token:${sortedActiveTokens.map(token => getTokenId(token)).join("|")}:start:${start}`
+        } else if (activeHighlights.length > 0) {
+            const highlightKey = activeHighlights
+                .map(highlight => `${highlight.className ?? "colored"}:${highlight.range[0]}`)
+                .join("|")
+            finalKey = `hl:${highlightKey}:start:${start}`
+        } else if (activeDiagnostics.length > 0) {
+            const diagnosticKey = activeDiagnostics
+                .map(diagnostic => `${diagnostic.severity}:${diagnostic.range[0]}`)
+                .join("|")
+            finalKey = `diag:${diagnosticKey}:start:${start}`
+        }
 
         segments.push({
             key: finalKey,
