@@ -78,6 +78,11 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 tokens: buildTokens(newCode, state.widgets)
             }
         }
+        case "SET_ACTIVE_TOKEN":
+            return {
+                ...state,
+                activeTokenId: action.payload
+            }
         case "SET_DIAGNOSTICS":
             nextState = {
                 ...state,

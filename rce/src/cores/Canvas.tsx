@@ -1,8 +1,10 @@
-import {
+import React, {
     createContext,
     createRef,
+    memo,
     ReactNode,
     RefObject,
+    useCallback,
     useContext,
     useEffect,
     useLayoutEffect,
@@ -58,6 +60,24 @@ const HighlightSpan = styled("span", {
 
 
 
+const MemoizedToken = React.memo(({ TokenComponent, token, onChange, isActive, children }: any) => {
+    return (
+        <TokenComponent token={token} onChange={onChange}>
+            {children}
+        </TokenComponent>
+    );
+}, (prev, next) => {
+    // If the token is active (being dragged), we MUST NOT re-render it
+    // This keeps the DOM stable and prevents the drag from being interrupted
+    if (next.isActive) return true;
+    
+    // Otherwise, do a standard comparison
+    return prev.token.text === next.token.text && 
+           prev.token.range[0] === next.token.range[0] && 
+           prev.token.range[1] === next.token.range[1] &&
+           prev.TokenComponent === next.TokenComponent;
+});
+
 export default function Canvas() {
     const { state, dispatch } = useEditor()
     const widgets = useWidgets()
@@ -78,38 +98,46 @@ export default function Canvas() {
     const stateRef = useRef(state)
     stateRef.current = state
 
+    // Use a stable ref for tokens to avoid recreating handlers unnecessarily
+    const tokensRef = useRef(tokens);
+    tokensRef.current = tokens;
+
     const segments = useMemo(() => {
         const extraBoundaries = matchingBraces ? [matchingBraces[0], matchingBraces[0] + 1, matchingBraces[1], matchingBraces[1] + 1] : []
         return buildRenderSegments(code, tokens, diagnostics, extraBoundaries, state.highlights)
     }, [code, tokens, diagnostics, matchingBraces, state.highlights])
+
+    const handleTokenChange = useCallback((originalId: string, newText: string) => {
+        // We find the token by its current position or nearest match if it shifted
+        // For now, we trust the tokenId from the reducer logic
+        dispatch({
+            type: "SET_TOKEN_TEXT",
+            payload: { tokenId: originalId, newText }
+        });
+    }, [dispatch]);
+
     const content = useMemo(() => {
         const nodes: ReactNode[] = []
 
         for (const segment of segments) {
             let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
-                    const TokenComponent = token.component
-                    const handleWidgetChange = (newText: string) => {
-                        dispatch({ 
-                            type: "SET_TOKEN_TEXT", 
-                            payload: {
-                                tokenId: getTokenId(token),
-                                newText
-                            }
-                        });
-                    };
-
+                    const id = getTokenId(token);
+                    
                     return (
                         <Span
-                            as={TokenComponent}
                             segments={{
                                 start: segment.start,
                                 end: segment.end
                             }}
-                            key={`${segment.key}:${token.range[0]}:${token.range[1]}`}
-                            token={token}
-                            onChange={handleWidgetChange}>
-                            {children}
+                            key={`${segment.key}:${id}`}>
+                            <MemoizedToken 
+                                TokenComponent={token.component}
+                                token={token}
+                                isActive={id === state.activeTokenId}
+                                onChange={(val: string) => handleTokenChange(getTokenId(token), val)}>
+                                {children}
+                            </MemoizedToken>
                         </Span>
                     )
                 },
@@ -134,7 +162,6 @@ export default function Canvas() {
 
             // Apply highlights
             if (segment.highlights.length > 0) {
-                // Apply first highlight (simple strategy for now)
                 const h = segment.highlights[0]
                 wrapped = (
                     <HighlightSpan
@@ -148,7 +175,6 @@ export default function Canvas() {
                 )
             }
 
-            // Check if this segment contains a matching brace
             if (matchingBraces && ((segment.start === matchingBraces[0] && segment.end === matchingBraces[0] + 1) || (segment.start === matchingBraces[1] && segment.end === matchingBraces[1] + 1))) {
                 wrapped = <MatchHighlight>{wrapped}</MatchHighlight>
             }
@@ -165,12 +191,10 @@ export default function Canvas() {
             )
         }
 
-        // Add a placeholder BR at the end to ensure trailing newlines render correctly
-        // and the caret can be placed at the end of the document.
         nodes.push(<br key="placeholder" data-placeholder="true" />)
 
         return nodes
-    }, [segments])
+    }, [segments, matchingBraces, handleTokenChange])
 
     useLayoutEffect(() => {
         if (selection && !isComposing.current) {
