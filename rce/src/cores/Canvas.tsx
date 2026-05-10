@@ -6,7 +6,8 @@ import {
     useContext,
     useEffect,
     useLayoutEffect,
-    useMemo
+    useMemo,
+    useRef
 } from "react"
 import { buildRenderSegments } from "../utils/rendering"
 import { getCaretCoordinates } from "../utils/caret"
@@ -16,6 +17,8 @@ import { useEditorHandler } from "../hooks/useEditorHandler"
 import { useBraceMatching } from "../hooks/useBraceMatching"
 import Span from "./Span"
 import { DiagnosticDecorator } from "./DiagnosticDecorator"
+import { useWidgets } from "./WidgetsProvider"
+import { buildTokens, getTokenId } from "../utils/tokenizer"
 
 const CanvasElement = styled("code")({
     position: "relative",
@@ -57,6 +60,7 @@ const HighlightSpan = styled("span", {
 
 export default function Canvas() {
     const { state, dispatch } = useEditor()
+    const widgets = useWidgets()
     const { code, tokens, selection, diagnostics } = state
     const {
         editorRef,
@@ -71,6 +75,9 @@ export default function Canvas() {
     } = useEditorHandler(state, dispatch)
 
     const matchingBraces = useBraceMatching(state)
+    const stateRef = useRef(state)
+    stateRef.current = state
+
     const segments = useMemo(() => {
         const extraBoundaries = matchingBraces ? [matchingBraces[0], matchingBraces[0] + 1, matchingBraces[1], matchingBraces[1] + 1] : []
         return buildRenderSegments(code, tokens, diagnostics, extraBoundaries, state.highlights)
@@ -82,10 +89,14 @@ export default function Canvas() {
             let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
                     const TokenComponent = token.component
-                    
                     const handleWidgetChange = (newText: string) => {
-                        const newCode = state.code.slice(0, token.range[0]) + newText + state.code.slice(token.range[1]);
-                        dispatch({ type: "SET_CODE", payload: newCode });
+                        dispatch({ 
+                            type: "SET_TOKEN_TEXT", 
+                            payload: {
+                                tokenId: getTokenId(token),
+                                newText
+                            }
+                        });
                     };
 
                     return (

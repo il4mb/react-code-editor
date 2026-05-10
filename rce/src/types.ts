@@ -1,3 +1,5 @@
+import React from "react"
+
 /** Represents a range in the code as [start, end] */
 export type Range = [number, number]
 
@@ -69,6 +71,8 @@ export type EditorActionMap = {
     SET_SUGGESTIONS: string[]
     SET_SUGGESTION_INDEX: number
     SET_DIAGNOSTICS: Diagnostic[]
+    SET_TOKEN_TEXT: { tokenId: string, newText: string }
+    UPDATE: Partial<EditorState>
 }
 
 /** Union of all possible editor actions */
@@ -79,4 +83,3 @@ export type EditorAction = {
     ? { type: Key; payload?: EditorActionMap[Key] }
     : { type: Key; payload: EditorActionMap[Key] }
 }[keyof EditorActionMap]
-

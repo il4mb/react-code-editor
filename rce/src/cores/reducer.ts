@@ -1,4 +1,6 @@
 import { EditorAction, EditorState } from "../types"
+import { buildTokens, getTokenId } from "../utils/tokenizer"
+
 export function editorReducer(state: EditorState, action: EditorAction): EditorState {
     let nextState: EditorState = state
 
@@ -25,6 +27,12 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
             nextState = {
                 ...state,
                 code: action.payload
+            }
+            break
+        case "UPDATE":
+            nextState = {
+                ...state,
+                ...action.payload
             }
             break
         case "SET_SELECTION":
@@ -58,6 +66,18 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 suggestionIndex: action.payload
             }
             break
+        case "SET_TOKEN_TEXT": {
+            const { tokenId, newText } = action.payload
+            const token = state.tokens.find(t => getTokenId(t) === tokenId)
+            if (!token) return state
+
+            const newCode = state.code.slice(0, token.range[0]) + newText + state.code.slice(token.range[1])
+            return {
+                ...state,
+                code: newCode,
+                tokens: buildTokens(newCode, state.widgets)
+            }
+        }
         case "SET_DIAGNOSTICS":
             nextState = {
                 ...state,

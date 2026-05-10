@@ -1,6 +1,7 @@
 import { styled } from "@mui/system"
-import { WidgetComponent } from "../types"
+import { WidgetComponent, WidgetComponentProps } from "../types"
 import { useEffect, useRef } from "react";
+import { useEditor } from "../Editor";
 
 const NumberBadge = styled("span")({
     display: "inline-flex",
@@ -20,10 +21,11 @@ const NumberBadge = styled("span")({
     },
 });
 
-export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => {
+export const NumberWidget: WidgetComponent = ({ children, token, onChange }: WidgetComponentProps) => {
     const isDragging = useRef(false);
     const initialX = useRef(0);
     const initialVal = useRef(0);
+    const initialUnit = useRef("");
 
     const onChangeRef = useRef(onChange);
     const tokenRef = useRef(token);
@@ -43,13 +45,17 @@ export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => 
 
     const onMouseDown = (e: React.MouseEvent) => {
         const text = tokenRef.current?.text || "";
-        const val = parseFloat(text);
-        if (isNaN(val)) return;
+        // Match the numeric part and the unit part separately
+        // Numeric: leading sign, digits, optional decimal
+        // Unit: everything else after the digits
+        const numMatch = text.match(/^([-+]?\d*\.?\d+)(.*)$/);
+        if (!numMatch) return;
 
         isDragging.current = true;
         initialX.current = e.clientX;
-        initialVal.current = val;
-
+        initialVal.current = parseFloat(numMatch[1]) || 0;
+        initialUnit.current = numMatch[2] || "";
+        
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "ew-resize";
@@ -58,22 +64,20 @@ export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => 
 
     const onMouseMove = (e: MouseEvent) => {
         if (!isDragging.current || !tokenRef.current) return;
-
+        
         const totalDelta = e.clientX - initialX.current;
         const currentText = tokenRef.current.text || "";
-
+        
         let next = initialVal.current + totalDelta;
-
+        
         if (!currentText.includes(".")) {
             next = Math.round(next);
         } else {
             next = parseFloat(next.toFixed(2));
         }
 
-        const nextText = next.toString();
+        const nextText = (next.toString() + initialUnit.current).replace(/[\r\n]/g, "");
         if (nextText !== currentText) {
-            console.log('nextText', nextText);
-            console.log('currentText', currentText);
             onChangeRef.current(nextText);
         }
     };
@@ -101,9 +105,9 @@ export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => 
 NumberWidget.widget = {
     tokenizer(code: string) {
         const ranges: [number, number][] = []
-        // Match numbers ONLY. Units like 'px' are left outside the token range
-        // so they are naturally preserved by the editor's update logic.
-        const regex = /-?\b\d+(\.\d+)?/gi;
+        // Match numbers and any following units (word characters or %) as a single token
+        // Ignore hex colors preceded by '#'
+        const regex = /(?<!#)-?\b\d+(\.\d+)?\w*%?/gi;
         let match: RegExpExecArray | null
 
         regex.lastIndex = 0

@@ -1,5 +1,5 @@
 import { Editor, Shell, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider, Diagnostic, HighlighterProvider, createRegexHighlighter } from '@il4mb/rce'
-import { ColorWidget, CSSName, CSSUnit, NumberWidget, BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget } from '@il4mb/rce/widgets'
+import { ColorWidget, CSSName, NumberWidget, BooleanWidget, NullWidget, FunctionWidget, ObjectWidget } from '@il4mb/rce/widgets'
 import { useState, useMemo, useCallback } from 'react';
 
 const CSS_VALUES: Record<string, string[]> = {
@@ -12,7 +12,7 @@ const CSS_VALUES: Record<string, string[]> = {
 }
 
 const JS_KEYWORDS = [
-    'const', 'let', 'var', 'function', 'return', 'if', 'else', 
+    'const', 'let', 'var', 'function', 'return', 'if', 'else',
     'for', 'while', 'import', 'export', 'class', 'extends',
     'true', 'false', 'null', 'undefined', 'async', 'await'
 ];
@@ -91,7 +91,7 @@ function App() {
         const allBefore = code.slice(0, position);
         const lastColon = allBefore.lastIndexOf(':');
         const lastNewline = allBefore.lastIndexOf('\n');
-        
+
         if (lastColon > lastNewline) {
             const propName = allBefore.slice(lastNewline + 1, lastColon).trim();
             const values = CSS_VALUES[propName] || [];
@@ -106,12 +106,12 @@ function App() {
         return JS_KEYWORDS.filter(k => k.startsWith(word.toLowerCase()));
     }, []);
 
-    const cssWidgets = useMemo(() => ({ 
+    const cssWidgets = useMemo(() => ({
         ColorWidget, NumberWidget, CSSName
     }), []);
 
-    const jsWidgets = useMemo(() => ({ 
-        BooleanWidget, JSNumberWidget, JSColorWidget, NullWidget, FunctionWidget, ObjectWidget
+    const jsWidgets = useMemo(() => ({
+        BooleanWidget, NullWidget, FunctionWidget, ObjectWidget, ColorWidget, NumberWidget
     }), []);
 
     const cssHighlighter = useMemo(() => createRegexHighlighter([
@@ -129,10 +129,10 @@ function App() {
     ]), []);
 
     return (
-        <div style={{ 
-            padding: '2rem', 
-            maxWidth: '1000px', 
-            margin: '0 auto', 
+        <div style={{
+            padding: '2rem',
+            maxWidth: '1000px',
+            margin: '0 auto',
             fontFamily: 'Inter, system-ui, sans-serif',
             color: '#e1e1e1',
             backgroundColor: '#121212',
@@ -146,7 +146,7 @@ function App() {
             </header>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', justifyContent: 'center' }}>
-                <button 
+                <button
                     onClick={() => setMode('css')}
                     style={{
                         padding: '0.75rem 1.5rem',
@@ -160,7 +160,7 @@ function App() {
                     }}>
                     CSS Editor
                 </button>
-                <button 
+                <button
                     onClick={() => setMode('js')}
                     style={{
                         padding: '0.75rem 1.5rem',
@@ -220,11 +220,11 @@ function App() {
                     <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: mode === 'css' ? '#4fc1ff' : '#a277ff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                         {mode === 'css' ? 'Visual Preview' : 'Execution Log'}
                     </div>
-                    <div style={{ 
-                        border: '1px solid #333', 
-                        borderRadius: '12px', 
-                        backgroundColor: '#1a1a1a', 
-                        height: '500px', 
+                    <div style={{
+                        border: '1px solid #333',
+                        borderRadius: '12px',
+                        backgroundColor: '#1a1a1a',
+                        height: '500px',
                         padding: '1.5rem',
                         display: 'flex',
                         alignItems: 'center',
@@ -232,8 +232,8 @@ function App() {
                         overflow: 'auto'
                     }}>
                         {mode === 'css' ? (
-                            <div style={{ 
-                                ...style, 
+                            <div style={{
+                                ...style,
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -255,10 +255,10 @@ function App() {
                         ) : (
                             <div style={{ alignSelf: 'stretch', width: '100%' }}>
                                 <div style={{ color: '#888', fontSize: '0.8rem', marginBottom: '0.5rem', fontFamily: 'monospace' }}>$ node runner.js</div>
-                                <pre style={{ 
-                                    margin: 0, 
-                                    color: '#a277ff', 
-                                    fontFamily: '"JetBrains Mono", monospace', 
+                                <pre style={{
+                                    margin: 0,
+                                    color: '#a277ff',
+                                    fontFamily: '"JetBrains Mono", monospace',
                                     fontSize: '0.9rem',
                                     lineHeight: 1.5
                                 }}>
@@ -269,7 +269,7 @@ function App() {
                     </div>
                 </div>
             </div>
-            
+
             <footer style={{ marginTop: '3rem', textAlign: 'center', color: '#555', fontSize: '0.8rem' }}>
                 &copy; 2026 Antigravity Editor - Built with React & Pure CSS
             </footer>

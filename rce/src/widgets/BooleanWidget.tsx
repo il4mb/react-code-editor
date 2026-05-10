@@ -1,4 +1,4 @@
-import { WidgetComponentProps } from "../../type";
+import { WidgetComponentProps } from "../types";
 import { styled } from "@mui/system";
 
 const ToggleButton = styled("span")({

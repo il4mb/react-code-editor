@@ -23,6 +23,8 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
     const { snapshot, pushToHistory, undo, redo } = useHistory(state)
     const { syncSelection, restoreSelection, suppressSelectionSync } = useSelection(state, dispatch, editorRef, isComposing)
 
+    const lastTokenizationRef = useRef<{ code: string; widgets: any }>({ code: "", widgets: null })
+
     const applySnapshot = useCallback((next: Snapshot, mode: "edit" | "undo" | "redo" = "edit") => {
         const current = {
             code: state.code,
@@ -34,11 +36,20 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
             pushToHistory(current, next)
         }
 
-        dispatch({ type: "SET_CODE", payload: next.code })
         const nextTokens = buildTokens(next.code, widgets)
-        dispatch({ type: "SET_TOKENS", payload: nextTokens })
-        dispatch({ type: "SET_SELECTION", payload: next.selection })
-        dispatch({ type: "SET_POSITION", payload: next.position })
+        
+        // Update the ref so the useEffect skips this change
+        lastTokenizationRef.current = { code: next.code, widgets }
+
+        dispatch({ 
+            type: "UPDATE", 
+            payload: {
+                code: next.code,
+                tokens: nextTokens,
+                selection: next.selection,
+                position: next.position
+            }
+        })
     }, [dispatch, state.code, state.position, state.selection, widgets, pushToHistory])
 
     const applyResult = useCallback((result: { code: string; selection: Range; position: number }) => {
@@ -167,15 +178,19 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         return () => document.removeEventListener("selectionchange", onSelectionChange)
     }, [syncSelection, suppressSelectionSync])
 
-    const lastTokenizationRef = useRef<{ code: string; widgets: any }>({ code: "", widgets: null })
-
-    // Update tokens when widgets or code change
+    // Handle initial load and external code/widget changes (Debounced)
     useEffect(() => {
-        if (state.code !== lastTokenizationRef.current.code || widgets !== lastTokenizationRef.current.widgets) {
+        if (state.code === lastTokenizationRef.current.code && widgets === lastTokenizationRef.current.widgets) {
+            return;
+        }
+
+        const timeout = setTimeout(() => {
             lastTokenizationRef.current = { code: state.code, widgets }
             const tokens = buildTokens(state.code, widgets)
             dispatch({ type: "SET_TOKENS", payload: tokens })
-        }
+        }, 150); // 150ms debounce for background tokenization
+
+        return () => clearTimeout(timeout);
     }, [widgets, state.code, dispatch])
 
     return {
