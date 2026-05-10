@@ -24,7 +24,10 @@
       "import": "./src/cores/index.ts",
       "types": "./src/cores/index.ts"
     },
-    "./styles.css": "./src/styles.css"
+    "./widgets": {
+      "import": "./src/widgets/index.ts",
+      "types": "./src/widgets/index.ts"
+    }
   },
   "scripts": {
     "dev": "concurrently \"tsc -w\" \"tsc-alias -w\"",

@@ -1,19 +1,43 @@
 import { createContext, createRef, RefObject, useContext, useRef } from "react"
 import Canvas from "./cores/Canvas"
+import { styled } from "@mui/system"
+
+const ShellElement = styled("div")({
+    position: "relative",
+    height: "100%",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    flexWrap: "nowrap",
+    alignItems: "flex-start",
+    alignContent: "flex-start",
+    justifyContent: "flex-start",
+    justifyItems: "flex-start",
+    boxSizing: "border-box",
+    flex: "1 0 0%",
+})
+
+const OverlayElement = styled("div")({
+    position: "absolute",
+    inset: 0,
+    pointerEvents: "none",
+    zIndex: 100
+})
+
     
 export default function Shell() {
     const overlayRef = useRef<HTMLDivElement>(null)
     return (
-        <OverlayElement.Provider value={overlayRef}>
-            <div className="code-editor-shell">
+        <OverlayElementProvider value={overlayRef}>
+            <ShellElement>
                 <Canvas />
-                <div className="slots-overlay" ref={overlayRef} />
-            </div>
-        </OverlayElement.Provider>
+                <OverlayElement ref={overlayRef} />
+            </ShellElement>
+        </OverlayElementProvider>
     )
 }
 
-const OverlayElement = createContext<RefObject<HTMLDivElement | null>>(createRef())
+const OverlayElementProvider = createContext<RefObject<HTMLDivElement | null>>(createRef())
 export const useOverlayElement = () => {
-    return useContext(OverlayElement)
+    return useContext(OverlayElementProvider)
 }

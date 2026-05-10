@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { WidgetComponent } from "../type";
+import { buildTokens } from "../utils/tokenizer";
+import { useEditor } from "../Editor";
 
 type Props = {
     children: React.ReactNode;
@@ -10,25 +12,29 @@ type Props = {
 export default function WidgetsProvider({ children, widgets: initialWidgets, }: Props) {
     const [widgets, setWidgets] = useState(initialWidgets);
     useEffect(() => {
-        setWidgets(initialWidgets);
+        setWidgets(prev => ({
+            ...prev,
+            ...initialWidgets
+        }));
     }, [initialWidgets]);
+
+    const values = useMemo(() => ({
+        ...widgets
+    }), [widgets]);
+
     return (
-        <WidgetContext.Provider value={{ widgets }}>
+        <WidgetContext.Provider value={values}>
             {children}
         </WidgetContext.Provider>
     );
 }
 
-interface WidgetContextType {
-    widgets: {
-        [key: string]: WidgetComponent;
-    };
+interface WidgetMap {
+    [key: string]: WidgetComponent;
 }
-const WidgetContext = createContext<WidgetContextType | undefined>(undefined);
+const WidgetContext = createContext<WidgetMap | undefined>(undefined);
 
-export const useWidgetContext = () => {
+export const useWidgets = () => {
     const context = useContext(WidgetContext);
-    if (!context)
-        throw new Error("useWidgetContext must be used within WidgetsProvider");
-    return context;
+    return context ?? {};
 };

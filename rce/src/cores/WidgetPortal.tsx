@@ -4,12 +4,19 @@ import { useEffect, useState } from "react"
 import { getCaretCoordinates } from "../utils/caret"
 import { useEditor } from "../Editor"
 import { useOverlayElement } from "../Shell"
+import { styled, SxProps } from "@mui/system"
+
+const Element = styled("div")({
+    position: "absolute",
+    zIndex: 100,
+})
 
 interface WidgetPortalProps {
     children?: React.ReactNode
+    sx?: SxProps
 }
 
-export default function WidgetPortal({ children }: WidgetPortalProps) {
+export default function WidgetPortal({ children, sx }: WidgetPortalProps) {
 
     const { state: { position } } = useEditor()
     const overlay = useOverlayElement()
@@ -54,11 +61,13 @@ export default function WidgetPortal({ children }: WidgetPortalProps) {
 
     if (!overlay.current || !coordinates) return null
     return createPortal(
-        <div
-            className="widget-portal"
-            style={{ left: coordinates?.x, top: coordinates?.y }}>
+        <Element sx={{
+            left: coordinates?.x,
+            top: coordinates?.y,
+            ...sx
+        }}>
             {children}
-        </div>,
+        </Element>,
         overlay.current
     )
 }

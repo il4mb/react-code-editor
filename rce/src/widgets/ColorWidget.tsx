@@ -1,7 +1,94 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { WidgetComponent } from "../type"
-import { useCodeState } from "../EditorProvider"
 import WidgetPortal from "../cores/WidgetPortal"
+import { useEditor } from "../Editor"
+import { styled } from "@mui/system"
+
+const ColorSpan = styled("span")({
+    display: "inline-block",
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    border: "1px solid rgba(0,0,0,0.08)",
+    marginRight: 1,
+    marginLeft: 2,
+    verticalAlign: "middle"
+})
+
+export const ColorWidget: WidgetComponent = ({ children, token }) => {
+    const [visible, setVisible] = useState(false)
+    const { state: { code, position } } = useEditor()
+    const [start, end] = token.range
+    const text = code.slice(start, end)
+    const color = getColorFromMatch(text)
+
+    const toggleVisibility = () => setVisible(v => !v)
+
+    useEffect(() => {
+        setVisible(false)
+    }, [position])
+
+    return (
+        <span
+            data-token-start={start}
+            data-token-end={end}>
+            {color && (
+                <ColorSpan
+                    onClick={toggleVisibility}
+                    aria-hidden
+                    sx={{ backgroundColor: color }}
+                />
+            )}
+            {visible && color && (
+                <WidgetPortal sx={{
+                    border: "1px solid rgba(0,0,0,0.1)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    marginTop: 0.2,
+                    padding: 1,
+                    pointerEvents: "fill"
+                }}>
+                    <div
+                        style={{
+                            width: "100%"
+                        }}>
+                        <div
+                            style={{
+                                width: 100,
+                                height: 100,
+                                backgroundColor: color,
+                                borderRadius: 4,
+                                border: "1px solid rgba(0,0,0,0.1)",
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                            }}
+                        />
+                    </div>
+                </WidgetPortal>
+            )}
+            {children}
+        </span>
+    )
+}
+
+ColorWidget.widget = {
+    tokenizer(code: string) {
+        const ranges: [number, number][] = []
+
+        let m: RegExpExecArray | null
+        HEX_PATTERN.lastIndex = 0
+        while ((m = HEX_PATTERN.exec(code)) !== null)
+            ranges.push([m.index, m.index + m[0].length])
+
+        RGB_PATTERN.lastIndex = 0
+        while ((m = RGB_PATTERN.exec(code)) !== null)
+            ranges.push([m.index, m.index + m[0].length])
+
+        HSL_PATTERN.lastIndex = 0
+        while ((m = HSL_PATTERN.exec(code)) !== null)
+            ranges.push([m.index, m.index + m[0].length])
+        return ranges
+    }
+}
+
 
 const HEX_PATTERN = /#(?:[0-9a-fA-F]{3}){1,2}(?:[0-9a-fA-F]{2})?\b/g
 const RGB_PATTERN =
@@ -102,85 +189,3 @@ function getColorFromMatch(match: string): string | null {
     return null
 }
 
-const ColorHighlight: WidgetComponent = ({ children, token }) => {
-    const [visible, setVisible] = useState(false)
-    const { code, position } = useCodeState()
-    const [start, end] = token.range
-    const text = code.slice(start, end)
-    const color = getColorFromMatch(text)
-
-    const toggleVisibility = () => setVisible(v => !v)
-
-    useEffect(() => {
-        setVisible(false)
-    }, [position])
-
-    return (
-        <span
-            data-token-start={start}
-            data-token-end={end}
-            style={{
-                position: "relative"
-            }}>
-            {color && (
-                <span
-                    onClick={toggleVisibility}
-                    aria-hidden
-                    style={{
-                        display: "inline-block",
-                        width: 12,
-                        height: 12,
-                        backgroundColor: color,
-                        borderRadius: 2,
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        marginRight: 6,
-                        verticalAlign: "middle"
-                    }}
-                />
-            )}
-            {visible && color && (
-                <WidgetPortal>
-                    <div
-                        style={{
-                            width: "100%"
-                        }}>
-                        <div
-                            style={{
-                                width: 100,
-                                height: 100,
-                                backgroundColor: color,
-                                borderRadius: 4,
-                                border: "1px solid rgba(0,0,0,0.1)",
-                                boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-                            }}
-                        />
-                    </div>
-                </WidgetPortal>
-            )}
-            {children}
-        </span>
-    )
-}
-
-ColorHighlight.widget = {
-    tokenizer(code: string) {
-        const ranges: [number, number][] = []
-
-        let m: RegExpExecArray | null
-        HEX_PATTERN.lastIndex = 0
-        while ((m = HEX_PATTERN.exec(code)) !== null)
-            ranges.push([m.index, m.index + m[0].length])
-
-        RGB_PATTERN.lastIndex = 0
-        while ((m = RGB_PATTERN.exec(code)) !== null)
-            ranges.push([m.index, m.index + m[0].length])
-
-        HSL_PATTERN.lastIndex = 0
-        while ((m = HSL_PATTERN.exec(code)) !== null)
-            ranges.push([m.index, m.index + m[0].length])
-
-        return ranges
-    }
-}
-
-export default ColorHighlight

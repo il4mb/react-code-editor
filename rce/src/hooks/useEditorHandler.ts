@@ -10,6 +10,7 @@ import {
 } from "../utils/editing"
 import { isRangeEqual } from "../utils/range"
 import { buildTokens } from "../utils/tokenizer"
+import { useWidgets } from "../cores/WidgetsProvider"
 
 type Snapshot = {
     code: string
@@ -33,6 +34,8 @@ function isMacPlatform() {
 }
 
 export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<EditorAction>) {
+
+    const widgets = useWidgets();
     const editorRef = useRef<HTMLElement>(null)
     const isComposing = useRef(false)
     const suppressSelectionSync = useRef(false)
@@ -68,11 +71,11 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         }
 
         dispatch({ type: "SET_CODE", payload: next.code })
-        const nextTokens = buildTokens(next.code, state.widgets)
+        const nextTokens = buildTokens(next.code, widgets)
         dispatch({ type: "SET_TOKENS", payload: nextTokens })
         dispatch({ type: "SET_SELECTION", payload: next.selection })
         dispatch({ type: "SET_POSITION", payload: next.position })
-    }, [dispatch, state.code, state.position, state.selection, state.widgets])
+    }, [dispatch, state.code, state.position, state.selection, widgets])
 
     // prettier-ignore
     const applyResult = useCallback((result: { code: string; selection: Range; position: number }) => {
@@ -336,6 +339,13 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         editor.addEventListener("beforeinput", nativeBeforeInput)
         return () => editor.removeEventListener("beforeinput", nativeBeforeInput)
     }, [applyResult, state])
+
+
+    useEffect(() => {
+        const tokens = buildTokens(state.code, widgets);
+        dispatch({ type: "SET_TOKENS", payload: tokens });
+        // only trigger when widgets is changed, not when tokens is changed
+    }, [widgets]);
 
     useEffect(() => {
         const onSelectionChange = () => {

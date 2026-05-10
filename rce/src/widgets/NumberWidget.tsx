@@ -1,15 +1,19 @@
+import { styled } from "@mui/system"
 import { WidgetComponent } from "../type"
+
+const Span = styled("span")({
+    color: "#0c845f"
+})
 
 const NUMBER_PATTERN = /(^|[^\w.])(-?(?:\d+\.\d+|\d+|\.\d+)(?:e[+-]?\d+)?)(?![\w%])/gi
 
 export const NumberWidget: WidgetComponent = ({ children, token }) => {
     return (
-        <span
-            className="widget-number"
+        <Span
             data-token-start={token.range[0]}
             data-token-end={token.range[1]}>
             {children}
-        </span>
+        </Span>
     )
 }
 
