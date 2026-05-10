@@ -1,7 +1,9 @@
-import { Token, WidgetComponent } from "../type"
+import { Token, WidgetComponent } from "../types"
 import { normalizeRange } from "./range"
 
-type RawToken = Token & {
+type RawToken = {
+    component: WidgetComponent
+    range: [number, number]
     widgetKey: string
     widgetIndex: number
     tokenIndex: number
@@ -32,8 +34,11 @@ function compareRawTokens(left: RawToken, right: RawToken) {
     return left.tokenIndex - right.tokenIndex
 }
 
-export function buildTokens(code: string, widgets: { [key: string]: WidgetComponent }): Token[] {
-
+/** 
+ * Build tokens from code using provided widgets.
+ * reconciles with previous tokens to maintain stable IDs.
+ */
+export function buildTokens(code: string, widgets: { [key: string]: WidgetComponent }, prevTokens: Token[] = []): Token[] {
     const rawTokens: RawToken[] = []
     const entries = Object.entries(widgets)
 
@@ -57,21 +62,46 @@ export function buildTokens(code: string, widgets: { [key: string]: WidgetCompon
 
     rawTokens.sort(compareRawTokens)
 
-    const deduped: Token[] = []
+    const result: Token[] = []
     const seen = new Set<string>()
 
-    for (const token of rawTokens) {
-        const id = `${getComponentId(token.component)}:${token.range[0]}:${token.range[1]}`
-        if (seen.has(id)) continue
-        seen.add(id)
-        deduped.push({ 
-            component: token.component, 
-            range: token.range,
-            text: code.slice(token.range[0], token.range[1])
+    // Reconcile with previous tokens to keep IDs stable
+    for (const raw of rawTokens) {
+        const text = code.slice(raw.range[0], raw.range[1]);
+        const compId = getComponentId(raw.component);
+        
+        // Find best match in prevTokens
+        // A match must have the same component and significantly overlapping range
+        let id = `${compId}:${raw.range[0]}:${raw.range[1]}`;
+        
+        const existing = prevTokens.find(t => 
+            t.component === raw.component && 
+            Math.abs(t.range[0] - raw.range[0]) < 10 // Nearby
+        );
+
+        if (existing) {
+            // If the text or range changed but it's the "same" logical token, keep the ID
+            // We use a persistent ID if possible
+            id = existing.id;
+        }
+
+        // Handle duplicates in same pass
+        let finalId = id;
+        let counter = 0;
+        while (seen.has(finalId)) {
+            finalId = `${id}:${counter++}`;
+        }
+        seen.add(finalId);
+
+        result.push({
+            id: finalId,
+            component: raw.component,
+            range: raw.range,
+            text
         })
     }
 
-    return deduped
+    return result
 }
 
 export function compareTokens(left: Token, right: Token) {
@@ -82,5 +112,5 @@ export function compareTokens(left: Token, right: Token) {
 }
 
 export function getTokenId(token: Token) {
-    return `${getComponentId(token.component)}:${token.range[0]}:${token.range[1]}`
+    return token.id || `${getComponentId(token.component)}:${token.range[0]}:${token.range[1]}`
 }

@@ -67,15 +67,15 @@ const MemoizedToken = React.memo(({ TokenComponent, token, onChange, isActive, c
         </TokenComponent>
     );
 }, (prev, next) => {
-    // If the token is active (being dragged), we MUST NOT re-render it
-    // This keeps the DOM stable and prevents the drag from being interrupted
-    if (next.isActive) return true;
-    
-    // Otherwise, do a standard comparison
+    // Standard comparison: only re-render if the token data actually changed
+    // Since buildTokens creates new objects, this will return false for the active token
+    // allowing it to update its display, but will return true for other tokens
+    // that didn't shift or change, keeping them optimized.
     return prev.token.text === next.token.text && 
            prev.token.range[0] === next.token.range[0] && 
            prev.token.range[1] === next.token.range[1] &&
-           prev.TokenComponent === next.TokenComponent;
+           prev.TokenComponent === next.TokenComponent &&
+           prev.isActive === next.isActive;
 });
 
 export default function Canvas() {
@@ -107,12 +107,10 @@ export default function Canvas() {
         return buildRenderSegments(code, tokens, diagnostics, extraBoundaries, state.highlights)
     }, [code, tokens, diagnostics, matchingBraces, state.highlights])
 
-    const handleTokenChange = useCallback((originalId: string, newText: string) => {
-        // We find the token by its current position or nearest match if it shifted
-        // For now, we trust the tokenId from the reducer logic
+    const handleTokenChange = useCallback((id: string, newText: string) => {
         dispatch({
             type: "SET_TOKEN_TEXT",
-            payload: { tokenId: originalId, newText }
+            payload: { tokenId: id, newText }
         });
     }, [dispatch]);
 
@@ -122,7 +120,7 @@ export default function Canvas() {
         for (const segment of segments) {
             let wrapped = segment.tokens.reduceRight<ReactNode>(
                 (children, token) => {
-                    const id = getTokenId(token);
+                    const id = token.id;
                     
                     return (
                         <Span
@@ -135,7 +133,7 @@ export default function Canvas() {
                                 TokenComponent={token.component}
                                 token={token}
                                 isActive={id === state.activeTokenId}
-                                onChange={(val: string) => handleTokenChange(getTokenId(token), val)}>
+                                onChange={(val: string) => handleTokenChange(id, val)}>
                                 {children}
                             </MemoizedToken>
                         </Span>

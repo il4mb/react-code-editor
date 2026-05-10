@@ -37,7 +37,7 @@ export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => 
 
     useEffect(() => {
         return () => {
-            console.log("cleanup")
+      
             document.removeEventListener("mousemove", onMouseMove);
             document.removeEventListener("mouseup", onMouseUp);
             if (isDragging.current) {
@@ -102,7 +102,7 @@ export const NumberWidget: WidgetComponent = ({ children, token, onChange }) => 
                 data-ignore="true">
                 ⬌
             </NumberBadge>
-            {children}
+            {token.text}
         </>
     );
 }

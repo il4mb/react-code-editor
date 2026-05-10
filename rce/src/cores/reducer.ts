@@ -75,7 +75,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
             return {
                 ...state,
                 code: newCode,
-                tokens: buildTokens(newCode, state.widgets)
+                tokens: buildTokens(newCode, state.widgets, state.tokens)
             }
         }
         case "SET_ACTIVE_TOKEN":

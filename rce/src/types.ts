@@ -5,6 +5,7 @@ export type Range = [number, number]
 
 /** A token represents a decorated range of code */
 export type Token = {
+    id: string
     component: WidgetComponent
     range: Range
     text: string
