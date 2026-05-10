@@ -36,7 +36,7 @@ function sortActiveTokens(tokens: Token[]) {
     })
 }
 
-export function buildRenderSegments(code: string, tokens: Token[], diagnostics: Diagnostic[] = []): RenderSegment[] {
+export function buildRenderSegments(code: string, tokens: Token[], diagnostics: Diagnostic[] = [], extraBoundaries: number[] = []): RenderSegment[] {
     if (!code.length) {
         return [{ key: "empty", start: 0, end: 0, text: "", tokens: [], diagnostics: [] }]
     }
@@ -49,6 +49,11 @@ export function buildRenderSegments(code: string, tokens: Token[], diagnostics: 
     for (const diagnostic of diagnostics) {
         boundaries.add(diagnostic.range[0])
         boundaries.add(diagnostic.range[1])
+    }
+    for (const boundary of extraBoundaries) {
+        if (boundary >= 0 && boundary <= code.length) {
+            boundaries.add(boundary)
+        }
     }
 
     const orderedBoundaries = Array.from(boundaries)

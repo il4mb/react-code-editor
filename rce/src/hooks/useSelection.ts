@@ -43,9 +43,9 @@ export function useSelection(
 
         suppressSelectionSync.current = true;
         setSelectionOffsets(editor, selection[0], selection[1]);
-        queueMicrotask(() => {
+        setTimeout(() => {
             suppressSelectionSync.current = false;
-        });
+        }, 0);
     }, [editorRef]);
 
     return {

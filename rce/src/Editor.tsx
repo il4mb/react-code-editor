@@ -1,4 +1,4 @@
-import { createContext, JSX, ReactNode, useContext, useReducer, useEffect } from "react"
+import { createContext, JSX, ReactNode, useContext, useReducer, useEffect, useRef } from "react"
 import { editorReducer } from "./cores/reducer"
 import { EditorAction, EditorState } from "./type"
 
@@ -21,9 +21,14 @@ export default function Editor({ children, initialValue, onChange }: EditorProps
         diagnostics: []
     })
 
+    const lastReportedCode = useRef(state.code)
+
     // Trigger onChange when code updates
     useEffect(() => {
-        onChange?.(state.code)
+        if (state.code !== lastReportedCode.current) {
+            lastReportedCode.current = state.code
+            onChange?.(state.code)
+        }
     }, [state.code, onChange])
 
     return (

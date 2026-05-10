@@ -133,8 +133,13 @@ function locatePosition(root: Node, offset: number): { node: Node; offset: numbe
     const found = walk(root)
     if (found) return found
 
-    if (root.nodeType === Node.ELEMENT_NODE && (root as HTMLElement).dataset.placeholder === "true") {
-        return { node: root.parentNode ?? root, offset: 0 }
+    // If we're at the end and didn't find anything, try to find the placeholder BR
+    if (root.nodeType === Node.ELEMENT_NODE) {
+        const children = Array.from(root.childNodes)
+        const lastChild = children[children.length - 1]
+        if (lastChild && isPlaceholderBr(lastChild)) {
+            return { node: root, offset: children.length - 1 }
+        }
     }
 
     return {

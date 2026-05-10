@@ -33,8 +33,9 @@ interface WidgetMap {
     [key: string]: WidgetComponent;
 }
 const WidgetContext = createContext<WidgetMap | undefined>(undefined);
+const STABLE_EMPTY_WIDGETS: WidgetMap = {};
 
 export const useWidgets = () => {
     const context = useContext(WidgetContext);
-    return context ?? {};
+    return context ?? STABLE_EMPTY_WIDGETS;
 };

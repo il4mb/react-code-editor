@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useEditor } from "../Editor";
 import { Diagnostic } from "../type";
 
@@ -9,29 +9,33 @@ interface DiagnosticsProviderProps {
 
 export default function DiagnosticsProvider({ children, validator }: DiagnosticsProviderProps) {
     const { state, dispatch } = useEditor();
+    const lastDiagnosticsRef = useRef<Diagnostic[]>([]);
 
     useEffect(() => {
         if (!validator) {
-            if (state.diagnostics.length > 0) {
+            if (lastDiagnosticsRef.current.length > 0) {
+                lastDiagnosticsRef.current = [];
                 dispatch({ type: "SET_DIAGNOSTICS", payload: [] });
             }
             return;
         }
 
         const diagnostics = validator(state.code);
-        // Simple comparison to avoid re-render loops if validator is not memoized
-        const isSame = diagnostics.length === state.diagnostics.length &&
-            diagnostics.every((d, i) =>
-                d.range[0] === state.diagnostics[i].range[0] &&
-                d.range[1] === state.diagnostics[i].range[1] &&
-                d.message === state.diagnostics[i].message &&
-                d.severity === state.diagnostics[i].severity
-            );
+        
+        const isSame = diagnostics.length === lastDiagnosticsRef.current.length &&
+            diagnostics.every((d, i) => {
+                const prev = lastDiagnosticsRef.current[i];
+                return d.range[0] === prev.range[0] &&
+                       d.range[1] === prev.range[1] &&
+                       d.message === prev.message &&
+                       d.severity === prev.severity;
+            });
 
         if (!isSame) {
+            lastDiagnosticsRef.current = diagnostics;
             dispatch({ type: "SET_DIAGNOSTICS", payload: diagnostics });
         }
-    }, [state.code, validator, dispatch, state.diagnostics]);
+    }, [state.code, validator, dispatch]);
 
     return <>{children}</>;
 }

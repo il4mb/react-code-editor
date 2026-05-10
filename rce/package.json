@@ -27,6 +27,9 @@
     "./widgets": {
       "import": "./src/widgets/index.ts",
       "types": "./src/widgets/index.ts"
+    },
+    "./type": {
+      "types": "./src/types.ts"
     }
   },
   "scripts": {

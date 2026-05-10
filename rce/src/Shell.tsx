@@ -1,5 +1,6 @@
 import { createContext, createRef, RefObject, useContext, useRef } from "react"
 import Canvas from "./cores/Canvas"
+import LineNumbers from "./cores/LineNumbers"
 import Suggestions from "./Suggestions"
 import { styled } from "@mui/system"
 
@@ -9,13 +10,18 @@ const ShellElement = styled("div")({
     width: "100%",
     display: "flex",
     flexDirection: "column",
-    flexWrap: "nowrap",
-    alignItems: "flex-start",
-    alignContent: "flex-start",
-    justifyContent: "flex-start",
-    justifyItems: "flex-start",
-    boxSizing: "border-box",
-    flex: "1 0 0%",
+    backgroundColor: "#1e1e1e",
+    borderRadius: "8px",
+    overflow: "hidden",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+})
+
+const EditorLayout = styled("div")({
+    display: "flex",
+    flexDirection: "row",
+    flex: 1,
+    overflow: "auto", // The main scrollable area
+    position: "relative",
 })
 
 const OverlayElement = styled("div")({
@@ -25,15 +31,19 @@ const OverlayElement = styled("div")({
     zIndex: 100
 })
 
-    
 export default function Shell() {
     const overlayRef = useRef<HTMLDivElement>(null)
     return (
         <OverlayElementProvider value={overlayRef}>
             <ShellElement>
-                <Canvas />
+                <EditorLayout>
+                    <LineNumbers />
+                    <div style={{ flex: 1, position: "relative" }}>
+                        <Canvas />
+                    </div>
+                    <OverlayElement ref={overlayRef} />
+                </EditorLayout>
                 <Suggestions />
-                <OverlayElement ref={overlayRef} />
             </ShellElement>
         </OverlayElementProvider>
     )

@@ -167,10 +167,15 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         return () => document.removeEventListener("selectionchange", onSelectionChange)
     }, [syncSelection, suppressSelectionSync])
 
-    // Update tokens when widgets change
+    const lastTokenizationRef = useRef<{ code: string; widgets: any }>({ code: "", widgets: null })
+
+    // Update tokens when widgets or code change
     useEffect(() => {
-        const tokens = buildTokens(state.code, widgets)
-        dispatch({ type: "SET_TOKENS", payload: tokens })
+        if (state.code !== lastTokenizationRef.current.code || widgets !== lastTokenizationRef.current.widgets) {
+            lastTokenizationRef.current = { code: state.code, widgets }
+            const tokens = buildTokens(state.code, widgets)
+            dispatch({ type: "SET_TOKENS", payload: tokens })
+        }
     }, [widgets, state.code, dispatch])
 
     return {

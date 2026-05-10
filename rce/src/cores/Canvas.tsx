@@ -13,6 +13,7 @@ import { getCaretCoordinates } from "../utils/caret"
 import { styled } from "@mui/system"
 import { useEditor } from "../Editor"
 import { useEditorHandler } from "../hooks/useEditorHandler"
+import { useBraceMatching } from "../hooks/useBraceMatching"
 import Span from "./Span"
 import { DiagnosticDecorator } from "./DiagnosticDecorator"
 
@@ -20,14 +21,14 @@ const CanvasElement = styled("code")({
     position: "relative",
     display: "block",
     minHeight: "280px",
-    padding: "20px",
+    padding: "20px 20px 20px 10px",
     outline: "none",
     overflow: "visible",
     whiteSpace: "pre",
     tabSize: 4,
     lineHeight: 1.7,
     letterSpacing: "0.01em",
-    color: "#3a3a3aff",
+    color: "#dbdbdbff",
     fontFamily: '"JetBrains Mono", "SFMono-Regular", Consolas, monospace',
     fontSize: "13px",
     borderRadius: "8px",
@@ -35,6 +36,12 @@ const CanvasElement = styled("code")({
     '&:focus': {
         outline: 'none',
     }
+})
+
+const MatchHighlight = styled("span")({
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderBottom: "1px solid rgba(255, 255, 255, 0.4)",
+    borderRadius: "2px",
 })
 
 
@@ -54,7 +61,11 @@ export default function Canvas() {
         syncSelection
     } = useEditorHandler(state, dispatch)
 
-    const segments = useMemo(() => buildRenderSegments(code, tokens, diagnostics), [code, tokens, diagnostics])
+    const matchingBraces = useBraceMatching(state)
+    const segments = useMemo(() => {
+        const extraBoundaries = matchingBraces ? [matchingBraces[0], matchingBraces[0] + 1, matchingBraces[1], matchingBraces[1] + 1] : []
+        return buildRenderSegments(code, tokens, diagnostics, extraBoundaries)
+    }, [code, tokens, diagnostics, matchingBraces])
     const content = useMemo(() => {
         const nodes: ReactNode[] = []
 
@@ -94,6 +105,11 @@ export default function Canvas() {
                 )
             }
 
+            // Check if this segment contains a matching brace
+            if (matchingBraces && ((segment.start === matchingBraces[0] && segment.end === matchingBraces[0] + 1) || (segment.start === matchingBraces[1] && segment.end === matchingBraces[1] + 1))) {
+                wrapped = <MatchHighlight>{wrapped}</MatchHighlight>
+            }
+
             nodes.push(
                 <Span
                     key={segment.key}
@@ -105,6 +121,10 @@ export default function Canvas() {
                 </Span>
             )
         }
+
+        // Add a placeholder BR at the end to ensure trailing newlines render correctly
+        // and the caret can be placed at the end of the document.
+        nodes.push(<br key="placeholder" data-placeholder="true" />)
 
         return nodes
     }, [segments])
