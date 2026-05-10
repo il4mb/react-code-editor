@@ -1,4 +1,4 @@
-import { Diagnostic, Highlight, Token, WidgetComponent } from "../type"
+import { Diagnostic, Highlight, Token, WidgetComponent } from "../types"
 import { getTokenId } from "./tokenizer"
 import { containsRange, rangeLength } from "./range"
 
@@ -84,10 +84,25 @@ export function buildRenderSegments(
         const activeDiagnostics = diagnostics.filter(diagnostic => containsRange(diagnostic.range, [start, end]))
         const activeHighlights = highlights.filter(highlight => containsRange(highlight.range, [start, end]))
         
-        const key = `${start}:${end}:${sortedActiveTokens.length ? sortedActiveTokens.map(getTokenId).join("|") : "plain"}:${activeDiagnostics.length ? activeDiagnostics.map(d => `${d.severity}-${d.message}`).join("|") : "clean"}:${activeHighlights.length ? activeHighlights.map(h => `${h.color}-${h.className}`).join("|") : "neutral"}`
+        // STABLE KEY LOGIC:
+        // Instead of using start:end, we use the IDs of the tokens that define this segment.
+        // This ensures that if the tokens move, the segment's key moves with them.
+        let key = "plain";
+        if (sortedActiveTokens.length > 0) {
+            key = `token-${sortedActiveTokens.map(t => t.id).join("-")}`;
+        } else if (activeHighlights.length > 0) {
+            key = `hl-${activeHighlights.map(h => h.className || "colored").join("-")}`;
+        } else if (activeDiagnostics.length > 0) {
+            key = `diag-${activeDiagnostics.map(d => d.severity).join("-")}`;
+        }
+        
+        // Add a sequence number to distinguish between multiple segments of the same type/tokens
+        // (e.g. text between tokens)
+        const sequence = segments.filter(s => s.key.startsWith(key)).length;
+        const finalKey = `${key}:${sequence}`;
 
         segments.push({
-            key,
+            key: finalKey,
             start,
             end,
             text: code.slice(start, end),
@@ -97,5 +112,5 @@ export function buildRenderSegments(
         })
     }
 
-    return segments.length ? segments : [{ key: "plain", start: 0, end: code.length, text: code, tokens: [], diagnostics: [], highlights: [] }]
+    return segments.length ? segments : [{ key: "plain:0", start: 0, end: code.length, text: code, tokens: [], diagnostics: [], highlights: [] }]
 }

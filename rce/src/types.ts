@@ -15,7 +15,6 @@ export type Token = {
 export type WidgetComponent = React.FC<{
     children?: React.ReactNode
     token: Token
-    onChange: (text: string) => void
 }> & {
     widget: {
         /** Returns ranges in the code that should be decorated with this widget */

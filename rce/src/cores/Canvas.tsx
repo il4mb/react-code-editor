@@ -1,7 +1,6 @@
 import React, {
     createContext,
     createRef,
-    memo,
     ReactNode,
     RefObject,
     useCallback,
@@ -20,7 +19,6 @@ import { useBraceMatching } from "../hooks/useBraceMatching"
 import Span from "./Span"
 import { DiagnosticDecorator } from "./DiagnosticDecorator"
 import { useWidgets } from "./WidgetsProvider"
-import { buildTokens, getTokenId } from "../utils/tokenizer"
 
 const CanvasElement = styled("code")({
     position: "relative",
@@ -60,27 +58,24 @@ const HighlightSpan = styled("span", {
 
 
 
-const MemoizedToken = React.memo(({ TokenComponent, token, onChange, isActive, children }: any) => {
+const MemoizedToken = React.memo(({ TokenComponent, token, isActive, children }: any) => {
     return (
-        <TokenComponent token={token} onChange={onChange}>
+        <TokenComponent token={token}>
             {children}
         </TokenComponent>
     );
 }, (prev, next) => {
-    // Standard comparison: only re-render if the token data actually changed
-    // Since buildTokens creates new objects, this will return false for the active token
-    // allowing it to update its display, but will return true for other tokens
-    // that didn't shift or change, keeping them optimized.
-    return prev.token.text === next.token.text && 
-           prev.token.range[0] === next.token.range[0] && 
-           prev.token.range[1] === next.token.range[1] &&
+    // CRITICAL OPTIMIZATION: Ignore range shifts.
+    // If the token ID and text haven't changed, we don't need to re-render the widget
+    // just because its character offset in the file shifted.
+    return prev.token.id === next.token.id &&
+           prev.token.text === next.token.text && 
            prev.TokenComponent === next.TokenComponent &&
            prev.isActive === next.isActive;
 });
 
 export default function Canvas() {
     const { state, dispatch } = useEditor()
-    const widgets = useWidgets()
     const { code, tokens, selection, diagnostics } = state
     const {
         editorRef,
@@ -107,13 +102,6 @@ export default function Canvas() {
         return buildRenderSegments(code, tokens, diagnostics, extraBoundaries, state.highlights)
     }, [code, tokens, diagnostics, matchingBraces, state.highlights])
 
-    const handleTokenChange = useCallback((id: string, newText: string) => {
-        dispatch({
-            type: "SET_TOKEN_TEXT",
-            payload: { tokenId: id, newText }
-        });
-    }, [dispatch]);
-
     const content = useMemo(() => {
         const nodes: ReactNode[] = []
 
@@ -128,12 +116,11 @@ export default function Canvas() {
                                 start: segment.start,
                                 end: segment.end
                             }}
-                            key={`${segment.key}:${id}`}>
+                            key={id}>
                             <MemoizedToken 
                                 TokenComponent={token.component}
                                 token={token}
-                                isActive={id === state.activeTokenId}
-                                onChange={(val: string) => handleTokenChange(id, val)}>
+                                isActive={id === state.activeTokenId}>
                                 {children}
                             </MemoizedToken>
                         </Span>
@@ -192,7 +179,7 @@ export default function Canvas() {
         nodes.push(<br key="placeholder" data-placeholder="true" />)
 
         return nodes
-    }, [segments, matchingBraces, handleTokenChange])
+    }, [segments, matchingBraces])
 
     useLayoutEffect(() => {
         if (selection && !isComposing.current) {

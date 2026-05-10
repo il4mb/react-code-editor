@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { WidgetComponent } from "../type"
+import { WidgetComponent } from "../types"
 import WidgetPortal from "../cores/WidgetPortal"
 import { useEditor } from "../Editor"
 import { styled } from "@mui/system"
