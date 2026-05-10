@@ -1,6 +1,6 @@
 {
   "name": "@il4mb/rce",
-  "version": "1.0.0",
+  "version": "0.5",
   "description": "React code editor (RCE) is a code editor for react",
   "types": "./dist/index.ts",
   "keywords": [
