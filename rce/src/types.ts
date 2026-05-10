@@ -32,10 +32,20 @@ export interface Diagnostic {
     severity: 'error' | 'warning' | 'info'
 }
 
+export interface Highlight {
+    range: Range
+    color?: string
+    backgroundColor?: string
+    fontWeight?: string
+    fontStyle?: string
+    className?: string
+}
+
 /** Global state of the editor */
 export interface EditorState {
     code: string
     tokens: Token[]
+    highlights: Highlight[]
     widgets: { [key: string]: WidgetComponent }
     position: number | null
     selection: Range | null
@@ -48,6 +58,7 @@ export interface EditorState {
 /** Mapping of action types to their payloads */
 export type EditorActionMap = {
     SET_TOKENS: Token[]
+    SET_HIGHLIGHTS: Highlight[]
     SET_WIDGETS: { [key: string]: WidgetComponent }
     SET_CODE: string
     SET_SELECTION: Range | null
