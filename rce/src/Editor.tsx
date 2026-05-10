@@ -14,7 +14,10 @@ export default function Editor({ children, initialValue }: EditorProps): JSX.Ele
         widgets: {},
         selection: null,
         position: null,
-        caretCoordinates: null
+        caretCoordinates: null,
+        suggestions: [],
+        suggestionIndex: 0,
+        diagnostics: []
     })
 
     return (

@@ -6,8 +6,6 @@
         "example"
     ],
     "scripts": {
-        "install:all": "npm install && npm run install:rce && npm run install:example",
-        "install:rce": "cd rce && npm install",
-        "install:example": "cd example && npm install"
+        "dev": "cd example && npm run dev"
     }
 }

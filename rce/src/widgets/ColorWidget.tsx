@@ -29,9 +29,7 @@ export const ColorWidget: WidgetComponent = ({ children, token }) => {
     }, [position])
 
     return (
-        <span
-            data-token-start={start}
-            data-token-end={end}>
+        <span>
             {color && (
                 <ColorSpan
                     onClick={toggleVisibility}
@@ -39,6 +37,7 @@ export const ColorWidget: WidgetComponent = ({ children, token }) => {
                     sx={{ backgroundColor: color }}
                 />
             )}
+
             {visible && color && (
                 <WidgetPortal sx={{
                     border: "1px solid rgba(0,0,0,0.1)",

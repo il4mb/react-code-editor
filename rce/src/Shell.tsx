@@ -1,5 +1,6 @@
 import { createContext, createRef, RefObject, useContext, useRef } from "react"
 import Canvas from "./cores/Canvas"
+import Suggestions from "./Suggestions"
 import { styled } from "@mui/system"
 
 const ShellElement = styled("div")({
@@ -31,6 +32,7 @@ export default function Shell() {
         <OverlayElementProvider value={overlayRef}>
             <ShellElement>
                 <Canvas />
+                <Suggestions />
                 <OverlayElement ref={overlayRef} />
             </ShellElement>
         </OverlayElementProvider>

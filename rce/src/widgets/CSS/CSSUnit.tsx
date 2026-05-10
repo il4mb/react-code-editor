@@ -1,13 +1,13 @@
 import { Fragment, useEffect, useState } from "react"
 import { WidgetComponent } from "../../type"
 import WidgetPortal from "../../cores/WidgetPortal"
-import { useCodeState } from "../../EditorProvider"
+import { useEditor } from "../../Editor"
 
 const CSS_UNIT_PATTERN =
     /-?\d*\.?\d+(?:px|r?em|lh|rlh|%|vh|vw|vmin|vmax|vi|vb|ch|ex|cap|ic|cm|mm|q|in|pt|pc|deg|grad|rad|turn|s|ms|hz|khz|dppx|dpi|dpcm|fr)\b/gi
 
 export const CSSUnit: WidgetComponent = ({ children, token }) => {
-    const { position } = useCodeState()
+    const { state: { position } } = useEditor()
     const [visible, setVisible] = useState(false)
     const toggleVisible = () => setVisible(v => !v)
 

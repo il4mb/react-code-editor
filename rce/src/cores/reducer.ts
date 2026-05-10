@@ -39,6 +39,19 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
                 caretCoordinates: action.payload
             }
             break
+        case "SET_SUGGESTIONS":
+            nextState = {
+                ...state,
+                suggestions: action.payload,
+                suggestionIndex: 0
+            }
+            break
+        case "SET_SUGGESTION_INDEX":
+            nextState = {
+                ...state,
+                suggestionIndex: action.payload
+            }
+            break
         default:
             nextState = state
     }

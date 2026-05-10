@@ -11,6 +11,7 @@ import {
 import { isRangeEqual } from "../utils/range"
 import { buildTokens } from "../utils/tokenizer"
 import { useWidgets } from "../cores/WidgetsProvider"
+import { getCurrentWord } from "../utils/suggestions"
 
 type Snapshot = {
     code: string
@@ -200,6 +201,46 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
                 historyRef.current.past.push(snapshot)
                 applySnapshot(next, "redo")
                 return
+            }
+
+            if (state.suggestions.length > 0) {
+                if (event.key === "ArrowDown") {
+                    event.preventDefault()
+                    dispatch({
+                        type: "SET_SUGGESTION_INDEX",
+                        payload: (state.suggestionIndex + 1) % state.suggestions.length
+                    })
+                    return
+                }
+                if (event.key === "ArrowUp") {
+                    event.preventDefault()
+                    dispatch({
+                        type: "SET_SUGGESTION_INDEX",
+                        payload: (state.suggestionIndex - 1 + state.suggestions.length) % state.suggestions.length
+                    })
+                    return
+                }
+                if (event.key === "Enter" || event.key === "Tab") {
+                    event.preventDefault()
+                    const suggestion = state.suggestions[state.suggestionIndex]
+                    if (suggestion && state.position !== null) {
+                        const { word, start, end } = getCurrentWord(state.code, state.position)
+                        const nextCode = state.code.slice(0, start) + suggestion + state.code.slice(end)
+                        const nextPosition = start + suggestion.length
+                        applyResult({
+                            code: nextCode,
+                            selection: [nextPosition, nextPosition],
+                            position: nextPosition
+                        })
+                        dispatch({ type: "SET_SUGGESTIONS", payload: [] })
+                    }
+                    return
+                }
+                if (event.key === "Escape") {
+                    event.preventDefault()
+                    dispatch({ type: "SET_SUGGESTIONS", payload: [] })
+                    return
+                }
             }
 
             if (event.key === "Tab") {

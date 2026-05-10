@@ -19,6 +19,12 @@ export interface CaretCoordinates {
     height: number
 }
 
+export interface Diagnostic {
+    range: Range
+    message: string
+    severity: 'error' | 'warning' | 'info'
+}
+
 export interface EditorState {
     code: string
     tokens: Token[]
@@ -26,6 +32,9 @@ export interface EditorState {
     position: number | null
     selection: Range | null
     caretCoordinates: CaretCoordinates | null
+    suggestions: string[]
+    suggestionIndex: number
+    diagnostics: Diagnostic[]
 }
 export type EditorActionMap = {
     SET_TOKENS: Token[]
@@ -34,6 +43,9 @@ export type EditorActionMap = {
     SET_SELECTION: Range | null
     SET_POSITION: number | null
     SET_CARET_COORDINATES: CaretCoordinates | null
+    SET_SUGGESTIONS: string[]
+    SET_SUGGESTION_INDEX: number
+    SET_DIAGNOSTICS: Diagnostic[]
 }
 export type EditorAction = {
     [Key in keyof EditorActionMap]: [EditorActionMap[Key]] extends [never]

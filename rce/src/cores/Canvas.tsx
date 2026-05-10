@@ -13,6 +13,7 @@ import { getCaretCoordinates } from "../utils/caret"
 import { styled } from "@mui/system"
 import { useEditor } from "../Editor"
 import { useEditorHandler } from "../hooks/useEditorHandler"
+import Span from "./Span"
 
 const CanvasElement = styled("code")({
     position: "relative",
@@ -57,23 +58,30 @@ export default function Canvas() {
                 (children, token) => {
                     const TokenComponent = token.component
                     return (
-                        <TokenComponent
+                        <Span
+                            as={TokenComponent}
+                            segments={{
+                                start: segment.tokens[0].range[0],
+                                end: segment.tokens[segment.tokens.length - 1].range[1]
+                            }}
                             key={`${segment.key}:${token.range[0]}:${token.range[1]}`}
                             token={token}>
                             {children}
-                        </TokenComponent>
+                        </Span>
                     )
                 },
                 segment.text
             )
 
             nodes.push(
-                <span
+                <Span
                     key={segment.key}
-                    data-segment-start={segment.start}
-                    data-segment-end={segment.end}>
+                    segments={{
+                        start: segment.start,
+                        end: segment.end
+                    }}>
                     {wrapped}
-                </span>
+                </Span>
             )
         }
 

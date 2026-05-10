@@ -1,13 +1,14 @@
+import { styled } from "@mui/system"
 import { WidgetComponent } from "../../type"
 
-export const CSSName: WidgetComponent = ({ children, token }) => {
+const Span = styled("span")({
+    color: "#ac6b0aff"
+})
+export const CSSName: WidgetComponent = ({ children }) => {
     return (
-        <span
-            className="widget-css-name"
-            data-token-start={token.range[0]}
-            data-token-end={token.range[1]}>
+        <Span>
             {children}
-        </span>
+        </Span>
     )
 }
 CSSName.widget = {
