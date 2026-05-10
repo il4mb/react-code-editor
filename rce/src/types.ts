@@ -11,15 +11,22 @@ export type Token = {
     text: string
 }
 
-/** A component that renders a token and provides a tokenizer */
-export type WidgetComponent = React.FC<{
+export type WidgetTokenizer = (code: string) => Range[]
+
+export interface WidgetComponentProps {
     children?: React.ReactNode
     token: Token
-}> & {
-    widget: {
-        /** Returns ranges in the code that should be decorated with this widget */
-        tokenizer(code: string): Range[]
-    }
+    renderDecorator?: boolean
+}
+
+export interface WidgetDefinition {
+    /** Returns ranges in the code that should be decorated with this widget */
+    tokenizer: WidgetTokenizer
+}
+
+/** A component that renders a token and provides a tokenizer */
+export type WidgetComponent = React.FC<WidgetComponentProps> & {
+    widget: WidgetDefinition
 }
 
 /** Coordinates of the caret in the editor */

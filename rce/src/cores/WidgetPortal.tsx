@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom"
 import { useEditableElement } from "./Canvas"
-import { useEffect, useState } from "react"
+import { RefObject, useEffect, useState } from "react"
 import { getCaretCoordinates } from "../utils/caret"
 import { useEditor } from "../Editor"
 import { useOverlayElement } from "../Shell"
@@ -14,9 +14,14 @@ const Element = styled("div")({
 interface WidgetPortalProps {
     children?: React.ReactNode
     sx?: SxProps
+    anchor?: RefObject<HTMLElement | null>
+    anchorOrigin?: {
+        vertical: "top" | "bottom"
+        horizontal: "left" | "right"
+    }
 }
 
-export default function WidgetPortal({ children, sx }: WidgetPortalProps) {
+export default function WidgetPortal({ children, sx, anchor, anchorOrigin }: WidgetPortalProps) {
 
     const { state: { position } } = useEditor()
     const overlay = useOverlayElement()
@@ -45,6 +50,14 @@ export default function WidgetPortal({ children, sx }: WidgetPortalProps) {
 
     useEffect(() => {
         if (!editor.current) return
+        if (anchor?.current) {
+            const rect = anchor.current.getBoundingClientRect()
+            const origin = anchorOrigin ?? { vertical: "bottom", horizontal: "left" }
+            const globalX = origin.horizontal === "left" ? rect.left : rect.right
+            const globalY = origin.vertical === "top" ? rect.top : rect.bottom
+            setCoordinates(globalToRelative(globalX, globalY))
+            return
+        }
         const coordinate = getCaretCoordinates(editor.current)
         if (coordinate) {
             const maxX = document.documentElement.clientWidth
@@ -57,7 +70,7 @@ export default function WidgetPortal({ children, sx }: WidgetPortalProps) {
             const clampedY = Math.min(globalCoord.y, maxY)
             setCoordinates(globalToRelative(clampedX, clampedY))
         }
-    }, [editor.current, position])
+    }, [editor.current, position, anchor?.current, anchorOrigin])
 
     if (!overlay.current || !coordinates) return null
     return createPortal(

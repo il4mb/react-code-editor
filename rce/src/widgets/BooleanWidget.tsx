@@ -1,5 +1,6 @@
-import { WidgetComponentProps } from "../types";
+import { WidgetComponent } from "../types";
 import { styled } from "@mui/system";
+import { useEditor } from "../Editor";
 
 const ToggleButton = styled("span")({
     display: "inline-flex",
@@ -34,11 +35,18 @@ const ToggleCircle = styled("span")({
     },
 });
 
-export function BooleanWidget({ children, token, onChange }: WidgetComponentProps) {
+export const BooleanWidget: WidgetComponent = ({ children, token }: any) => {
+    const { dispatch } = useEditor();
     const value = token.text === "true";
     
     const toggle = () => {
-        onChange(value ? "false" : "true");
+        dispatch({
+            type: "SET_TOKEN_TEXT",
+            payload: { 
+                tokenId: token.id, 
+                newText: value ? "false" : "true" 
+            }
+        });
     };
 
     return (

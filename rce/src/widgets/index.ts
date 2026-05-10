@@ -1,4 +1,5 @@
 export * from "./ColorWidget"
 export * from "./NumberWidget"
+export * from "./UnitWidget"
 export * from "./CSS"
 export * from "./JS"

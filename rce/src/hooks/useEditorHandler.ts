@@ -185,9 +185,12 @@ export function useEditorHandler(state: EditorState, dispatch: React.Dispatch<Ed
         }
 
         const timeout = setTimeout(() => {
-            lastTokenizationRef.current = { code: state.code, widgets }
-            const tokens = buildTokens(state.code, widgets, state.tokens)
-            dispatch({ type: "SET_TOKENS", payload: tokens })
+            // Re-check if code hasn't changed since we scheduled this
+            if (state.code !== lastTokenizationRef.current.code) {
+                lastTokenizationRef.current = { code: state.code, widgets }
+                const tokens = buildTokens(state.code, widgets, state.tokens)
+                dispatch({ type: "SET_TOKENS", payload: tokens })
+            }
         }, 150); // 150ms debounce for background tokenization
 
         return () => clearTimeout(timeout);

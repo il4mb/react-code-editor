@@ -20,7 +20,8 @@ export default function Editor({ children, initialValue, onChange }: EditorProps
         suggestionIndex: 0,
         diagnostics: [],
         highlights: [],
-        activeTokenId: null
+        activeTokenId: null,
+        hoveredTokenId: null
     })
 
     const lastReportedCode = useRef(state.code)

@@ -1,6 +1,11 @@
 import { styled } from "@mui/system";
+import { ComponentType, HTMLAttributes } from "react";
 
-export const DiagnosticDecorator = styled("span", {
+type DiagnosticDecoratorProps = HTMLAttributes<HTMLSpanElement> & {
+    severity?: 'error' | 'warning' | 'info'
+}
+
+export const DiagnosticDecorator: ComponentType<DiagnosticDecoratorProps> = styled("span", {
     shouldForwardProp: (prop) => prop !== "severity",
 })<{ severity?: 'error' | 'warning' | 'info' }>(({ severity }) => ({
     textDecoration: "underline",

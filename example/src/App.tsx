@@ -1,5 +1,5 @@
 import { Editor, Shell, WidgetsProvider, SuggestionsProvider, DiagnosticsProvider, Diagnostic, HighlighterProvider, createRegexHighlighter } from '@il4mb/rce'
-import { ColorWidget, CSSName, NumberWidget, BooleanWidget, NullWidget, FunctionWidget, ObjectWidget } from '@il4mb/rce/widgets'
+import { ColorWidget, CSSName, NumberWidget, UnitWidget, BooleanWidget, NullWidget, FunctionWidget, ObjectWidget } from '@il4mb/rce/widgets'
 import { useState, useMemo, useCallback } from 'react';
 
 const CSS_VALUES: Record<string, string[]> = {
@@ -107,7 +107,7 @@ function App() {
     }, []);
 
     const cssWidgets = useMemo(() => ({
-        ColorWidget, NumberWidget, CSSName
+        ColorWidget, NumberWidget, UnitWidget, CSSName
     }), []);
 
     const jsWidgets = useMemo(() => ({

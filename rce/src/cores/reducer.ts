@@ -76,6 +76,13 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
             const token = state.tokens.find(t => getTokenId(t) === tokenId)
             if (!token) return state
 
+            // Safety check: ensure the token range in our state still matches the token text in the current code
+            // If they are out of sync, applying the range-based slice would corrupt the code
+            if (state.code.slice(token.range[0], token.range[1]) !== token.text) {
+                console.warn(`Token sync error: "${token.text}" not found at range ${token.range[0]}:${token.range[1]}`);
+                return state;
+            }
+
             const newCode = state.code.slice(0, token.range[0]) + newText + state.code.slice(token.range[1])
             return {
                 ...state,

@@ -1,7 +1,7 @@
 import { WidgetComponent } from "../../types";
 import { styled } from "@mui/system";
-import { useEffect, useRef, useState } from "react";
-import { useEditor } from "../../Editor";
+import { useRef, useState } from "react";
+import { useWidgetDrag, useWidgetToken } from "../../hooks/widgetHooks";
 
 const NumberBadge = styled("span")({
     display: "inline-flex",
@@ -21,38 +21,32 @@ const NumberBadge = styled("span")({
     },
 });
 
-export const JSNumberWidget: WidgetComponent = ({ children, token, renderDecorator }: any) => {
-    const { dispatch } = useEditor();
+export const JSNumberWidget: WidgetComponent = ({ children, token, renderDecorator }) => {
+    const { tokenRef, setText } = useWidgetToken(token)
     
     const [dragging, setDragging] = useState(false);
     const [localValue, setLocalValue] = useState("");
     
-    const initialX = useRef(0);
     const initialVal = useRef(0);
     const initialUnit = useRef("");
-    const isDraggingRef = useRef(false);
     const localValueRef = useRef("");
 
-    const tokenRef = useRef(token);
-    tokenRef.current = token;
+    const { onMouseDown } = useWidgetDrag({
+        cursor: "ew-resize",
+        onStart: () => {
+            const text = tokenRef.current?.text || "";
+            const numMatch = text.match(/^([-+]?\d*\.?\d+)(.*)$/);
+            if (!numMatch) return;
 
-    const handleMouseDown = (e: React.MouseEvent) => {
-        const text = tokenRef.current?.text || "";
-        const numMatch = text.match(/^([-+]?\d*\.?\d+)(.*)$/);
-        if (!numMatch) return;
-
-        initialX.current = e.clientX;
-        initialVal.current = parseFloat(numMatch[1]) || 0;
-        initialUnit.current = numMatch[2] || "";
-
-        isDraggingRef.current = true;
-        setDragging(true);
-        setLocalValue(text);
-        localValueRef.current = text;
-
-        const onMove = (me: MouseEvent) => {
-            const totalDelta = me.clientX - initialX.current;
-            let next = initialVal.current + totalDelta;
+            initialVal.current = parseFloat(numMatch[1]) || 0;
+            initialUnit.current = numMatch[2] || "";
+            setDragging(true);
+            setLocalValue(text);
+            localValueRef.current = text;
+        },
+        onMove: ({ deltaX }) => {
+            if (!dragging && !localValueRef.current) return
+            let next = initialVal.current + deltaX;
             
             if (!tokenRef.current.text.includes(".")) {
                 next = Math.round(next);
@@ -60,34 +54,26 @@ export const JSNumberWidget: WidgetComponent = ({ children, token, renderDecorat
                 next = parseFloat(next.toFixed(2));
             }
 
-            const nextText = (next.toString() + initialUnit.current).replace(/[\r\n]/g, "");
+            const nextText = next.toString() + initialUnit.current;
             setLocalValue(nextText);
             localValueRef.current = nextText;
-
-            dispatch({
-                type: "SET_TOKEN_TEXT",
-                payload: { tokenId: tokenRef.current.id, newText: nextText }
-            });
-        };
-
-        const onUp = () => {
-            isDraggingRef.current = false;
+            setText(nextText)
+        },
+        onEnd: () => {
             setDragging(false);
-            document.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseup", onUp);
-            document.body.style.cursor = "";
-            
-            dispatch({
-                type: "SET_TOKEN_TEXT",
-                payload: { tokenId: tokenRef.current.id, newText: localValueRef.current }
-            });
-        };
+            if (localValueRef.current) {
+                setText(localValueRef.current)
+            }
+        }
+    })
 
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-        document.body.style.cursor = "ew-resize";
-        e.preventDefault();
-    };
+    const handleMouseDown = (e: React.MouseEvent<HTMLElement>) => {
+        const text = tokenRef.current?.text || "";
+        const numMatch = text.match(/^([-+]?\d*\.?\d+)(.*)$/);
+        if (!numMatch) return;
+
+        onMouseDown(e)
+    }
 
     return (
         <>
