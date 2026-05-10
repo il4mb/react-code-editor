@@ -5,7 +5,7 @@
         "dev": "vite"
     },
     "dependencies": {
-        "@il4mb/rce": "workspace:*",
+        "@il4mb/rce": "^0.1.6",
         "react": "^19.2.6",
         "react-dom": "^19.2.6"
     },
